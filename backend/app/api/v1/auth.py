@@ -7,7 +7,13 @@ from app.api.dependencies import AdminUser, CurrentUser, Db, MasterUser
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.schemas.auth import Login, Registration, TokenRead, UserRead, UserUpdate
+from app.schemas.errors import ErrorResponse
 from app.services.auth import AuthService
+
+
+def errors(*statuses: int):
+    return {status: {"model": ErrorResponse} for status in statuses}
+
 
 router = APIRouter(tags=["Authentication"])
 COOKIE_NAME = "masterly_refresh"
@@ -48,6 +54,7 @@ def clear_refresh(response: Response) -> None:
 
 @router.post(
     "/auth/register",
+    responses=errors(403, 409, 422, 429, 503),
     response_model=UserRead,
     status_code=201,
     dependencies=[Depends(require_browser_origin)],
@@ -59,6 +66,7 @@ def register(data: Registration, db: Db):
 
 @router.post(
     "/auth/token",
+    responses=errors(401, 403, 422, 429, 503),
     response_model=TokenRead,
     dependencies=[Depends(require_browser_origin)],
     summary="Authenticate with JSON credentials and issue a refresh cookie",
@@ -71,6 +79,7 @@ def login(data: Login, response: Response, db: Db):
 
 @router.post(
     "/auth/refresh",
+    responses=errors(401, 403, 429, 503),
     response_model=TokenRead,
     dependencies=[Depends(require_browser_origin)],
     summary="Rotate the refresh cookie; replays revoke its entire family",
@@ -86,6 +95,7 @@ def refresh(request: Request, response: Response, db: Db):
 
 @router.delete(
     "/auth/session",
+    responses=errors(403, 503),
     status_code=204,
     dependencies=[Depends(require_browser_origin)],
     summary="Revoke refresh session",
@@ -97,13 +107,23 @@ def logout(request: Request, db: Db):
     return response
 
 
-@router.get("/users/me", response_model=UserRead, tags=["Users"], summary="Current private profile")
+@router.get(
+    "/users/me",
+    responses=errors(401, 503),
+    response_model=UserRead,
+    tags=["Users"],
+    summary="Current private profile",
+)
 def me(user: CurrentUser):
     return user
 
 
 @router.patch(
-    "/users/me", response_model=UserRead, tags=["Users"], summary="Update own display name"
+    "/users/me",
+    responses=errors(401, 422, 503),
+    response_model=UserRead,
+    tags=["Users"],
+    summary="Update own display name",
 )
 def update_me(data: UserUpdate, user: CurrentUser, db: Db):
     return AuthService(db).update_user(user, data.display_name)
@@ -121,6 +141,7 @@ class MasterRead(BaseModel):
 
 @router.get(
     "/master/profile",
+    responses=errors(401, 403, 404, 503),
     response_model=MasterRead,
     tags=["Master"],
     summary="Read only the authenticated master's profile",
@@ -137,6 +158,7 @@ class AdminOverview(BaseModel):
 
 @router.get(
     "/admin/overview",
+    responses=errors(401, 403, 503),
     response_model=AdminOverview,
     tags=["Administration"],
     summary="Real system totals, restricted to ADMIN",
