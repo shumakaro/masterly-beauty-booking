@@ -6,6 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
 
+    database_url: str | None = None
+    database_url_unpooled: str | None = None
+
     app_name: str = "MASTERLY API"
     cors_origins: list[str] = ["http://localhost:5173"]
 
