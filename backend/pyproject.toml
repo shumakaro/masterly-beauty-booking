@@ -2,7 +2,7 @@
 name = "masterly-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["fastapi", "uvicorn", "pydantic-settings", "sqlalchemy>=2.0,<2.1", "alembic", "psycopg[binary]", "tzdata"]
+dependencies = ["fastapi", "uvicorn", "pydantic-settings", "sqlalchemy>=2.0,<2.1", "alembic", "psycopg[binary]", "tzdata", "bcrypt", "PyJWT", "email-validator"]
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx", "ruff", "pip-tools"]
@@ -21,3 +21,11 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*.py" = ["E501"]
+
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
