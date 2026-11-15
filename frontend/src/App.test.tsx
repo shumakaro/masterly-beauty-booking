@@ -1,19 +1,29 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, expect, it, vi } from 'vitest'
-import App from './App'
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import App from "./App";
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+beforeEach(() => {
+  window.history.replaceState({}, "", "/");
+  vi.stubGlobal("scrollTo", vi.fn());
+  Element.prototype.scrollIntoView = vi.fn();
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
-it('does not claim that the database is ready when API liveness succeeds', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true, json: async () => ({ status: 'ok', service: 'masterly-api' }),
-  }))
-  render(<App />)
-  expect(await screen.findByText(/базы данных пока не проверяется/)).toBeInTheDocument()
-})
+it("lets visitors explore a direction without pretending to make a booking", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: /Ногти/ }));
+  expect(screen.getByText(/Лаконичный нюд/)).toBeInTheDocument();
+  expect(screen.getByText(/Онлайн-запись откроется/)).toBeInTheDocument();
+});
 
-it('shows an actionable error when the API is unavailable', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
-  render(<App />)
-  expect(await screen.findByText(/API недоступен/)).toBeInTheDocument()
-})
+it("provides a real recovery route for an unknown URL", () => {
+  window.history.replaceState({}, "", "/unknown-page");
+  render(<App />);
+  fireEvent.click(screen.getByRole("link", { name: /Вернуться на главную/ }));
+  expect(
+    screen.getByRole("heading", { level: 1, name: /Красота/ }),
+  ).toBeInTheDocument();
+});
