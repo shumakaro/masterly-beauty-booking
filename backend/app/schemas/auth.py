@@ -19,7 +19,9 @@ class Registration(StrictSchema):
     def validate_password(cls, value: SecretStr) -> SecretStr:
         password = value.get_secret_value()
         if len(password) < 10 or len(password.encode("utf-8")) > 72 or "\x00" in password:
-            raise ValueError("Пароль: от 10 символов и не более 72 байт UTF-8, без нулевого символа")
+            raise ValueError(
+                "Пароль: от 10 символов и не более 72 байт UTF-8, без нулевого символа"
+            )
         return value
 
     @field_validator("display_name")

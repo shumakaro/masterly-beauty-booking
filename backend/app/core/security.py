@@ -42,16 +42,26 @@ def token_hash(token: str) -> str:
 def access_token(user_id: UUID, role: str) -> str:
     now = datetime.now(UTC)
     return jwt.encode(
-        {"sub": str(user_id), "role": role, "iat": now,
-         "exp": now + timedelta(minutes=15), "type": "access"},
-        signing_key(), algorithm="HS256",
+        {
+            "sub": str(user_id),
+            "role": role,
+            "iat": now,
+            "exp": now + timedelta(minutes=15),
+            "type": "access",
+        },
+        signing_key(),
+        algorithm="HS256",
     )
 
 
 def decode_access(token: str) -> UUID:
     try:
-        data = jwt.decode(token, signing_key(), algorithms=["HS256"],
-                          options={"require": ["sub", "role", "iat", "exp", "type"]})
+        data = jwt.decode(
+            token,
+            signing_key(),
+            algorithms=["HS256"],
+            options={"require": ["sub", "role", "iat", "exp", "type"]},
+        )
         if data["type"] != "access" or data["role"] not in {"CLIENT", "MASTER", "ADMIN"}:
             raise ValueError("Invalid token type")
         return UUID(data["sub"])

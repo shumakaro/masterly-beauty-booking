@@ -8,8 +8,14 @@ anyio==4.16.0
     # via
     #   fastapi
     #   starlette
+bcrypt==5.0.0
+    # via masterly-backend (backend/pyproject.toml)
 click==8.5.1
     # via uvicorn
+dnspython==2.9.2
+    # via email-validator
+email-validator==2.4.0
+    # via masterly-backend (backend/pyproject.toml)
 fastapi==0.163.0
     # via masterly-backend (backend/pyproject.toml)
 greenlet==3.5.6
@@ -17,7 +23,9 @@ greenlet==3.5.6
 h11==0.16.0
     # via uvicorn
 idna==3.20
-    # via anyio
+    # via
+    #   anyio
+    #   email-validator
 mako==1.4.3
     # via alembic
 markupsafe==3.0.4
@@ -35,6 +43,8 @@ pydantic==2.14.3
 pydantic-core==2.50.4
     # via pydantic
 pydantic-settings==2.16.3
+    # via masterly-backend (backend/pyproject.toml)
+pyjwt==2.15.1
     # via masterly-backend (backend/pyproject.toml)
 python-dotenv==1.2.4
     # via pydantic-settings

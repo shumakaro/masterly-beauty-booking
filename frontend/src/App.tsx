@@ -1,3 +1,9 @@
+import { AuthProvider } from "./features/auth/AuthContext";
+import { useAuth } from "./features/auth/authState";
+import { ProtectedRoute } from "./features/auth/ProtectedRoute";
+import { homeForRole } from "./features/auth/paths";
+import { LoginPage, RegisterPage } from "./pages/auth/AuthPages";
+import { AccountPage, ProfilePage } from "./pages/AccountPage";
 import { useState } from "react";
 import {
   ArrowDown,
@@ -55,6 +61,7 @@ const categories = [
 ];
 
 function Header() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   return (
     <header
@@ -84,8 +91,9 @@ function Header() {
         <Link to="/#how-it-works" onClick={() => setOpen(false)}>
           Как это работает
         </Link>
-        <Link to="/brand">
-          Стиль MASTERLY <ArrowRight size={15} />
+        <Link to="/brand">Стиль MASTERLY</Link>
+        <Link to={user ? homeForRole(user.role) : "/login"}>
+          {user ? "Мой кабинет" : "Войти"} <ArrowRight size={15} />
         </Link>
       </nav>
     </header>
@@ -480,24 +488,60 @@ function NotFound() {
 export default function App() {
   return (
     <BrowserRouter>
-      <PagePosition />
-      <a className="skip-link" href="#main">
-        Перейти к содержимому
-      </a>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/brand" element={<BrandPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <footer className="site-footer shell">
-        <Brand />
-        <p>Немного заботы. Каждый день.</p>
-        <Link to="/brand">
-          Фирменный стиль <ArrowRight size={15} />
-        </Link>
-        <span>© {currentYear} MASTERLY</span>
-      </footer>
+      <AuthProvider>
+        <PagePosition />
+        <a className="skip-link" href="#main">
+          Перейти к содержимому
+        </a>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/brand" element={<BrandPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute roles={["CLIENT"]}>
+                <AccountPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/master/dashboard"
+            element={
+              <ProtectedRoute roles={["MASTER"]}>
+                <AccountPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={["ADMIN"]}>
+                <AccountPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <footer className="site-footer shell">
+          <Brand />
+          <p>Немного заботы. Каждый день.</p>
+          <Link to="/brand">
+            Фирменный стиль <ArrowRight size={15} />
+          </Link>
+          <span>© {currentYear} MASTERLY</span>
+        </footer>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

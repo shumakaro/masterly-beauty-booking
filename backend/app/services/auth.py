@@ -19,8 +19,12 @@ class AuthService:
 
     def register(self, data: Registration) -> User:
         signing_key()  # Fail before creating unusable accounts if deployment is incomplete.
-        user = User(email=str(data.email).strip().lower(), display_name=data.display_name,
-                    password_hash=hash_password(data.password.get_secret_value()), role=data.role)
+        user = User(
+            email=str(data.email).strip().lower(),
+            display_name=data.display_name,
+            password_hash=hash_password(data.password.get_secret_value()),
+            role=data.role,
+        )
         try:
             self.db.add(user)
             self.db.flush()
@@ -29,14 +33,20 @@ class AuthService:
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
-            raise AppError(409, "EMAIL_UNAVAILABLE", "Этот email уже используется.",
-                           [{"path": "email", "message": "Этот email уже используется."}]) from exc
+            raise AppError(
+                409,
+                "EMAIL_UNAVAILABLE",
+                "Этот email уже используется.",
+                [{"path": "email", "message": "Этот email уже используется."}],
+            ) from exc
         return user
 
     def login(self, data: Login) -> tuple[TokenRead, str, int]:
         signing_key()
         user = self.repo.user_by_email(data.email.strip().lower())
-        valid = verify_password(data.password.get_secret_value(), user.password_hash if user else None)
+        valid = verify_password(
+            data.password.get_secret_value(), user.password_hash if user else None
+        )
         if not valid or not user or not user.is_active:
             raise AppError(401, "INVALID_CREDENTIALS", "Неверный email или пароль.")
         return self.issue(user)
@@ -46,10 +56,20 @@ class AuthService:
         deadline = expires_at or now + timedelta(days=7)
         raw = token_urlsafe(48)
         token = access_token(user.id, user.role)
-        self.db.add(RefreshSession(user_id=user.id, token_hash=token_hash(raw),
-                                   family_id=family_id or uuid4(), expires_at=deadline))
+        self.db.add(
+            RefreshSession(
+                user_id=user.id,
+                token_hash=token_hash(raw),
+                family_id=family_id or uuid4(),
+                expires_at=deadline,
+            )
+        )
         self.db.commit()
-        return TokenRead(access_token=token, user=UserRead.model_validate(user)), raw, max(0, int((deadline-now).total_seconds()))
+        return (
+            TokenRead(access_token=token, user=UserRead.model_validate(user)),
+            raw,
+            max(0, int((deadline - now).total_seconds())),
+        )
 
     def refresh(self, raw: str) -> tuple[TokenRead, str, int]:
         signing_key()
@@ -75,3 +95,17 @@ class AuthService:
             if session:
                 self.repo.revoke_family(session.family_id, datetime.now(UTC))
                 self.db.commit()
+
+    def update_user(self, user: User, name: str) -> User:
+        user.display_name = name
+        self.db.commit()
+        return user
+
+    def master_profile(self, user_id):
+        profile = self.repo.master_profile(user_id)
+        if profile is None:
+            raise AppError(404, "NOT_FOUND", "Профиль не найден.")
+        return profile
+
+    def overview(self):
+        return self.repo.overview()
