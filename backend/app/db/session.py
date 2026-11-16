@@ -6,13 +6,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.errors import AppError
 
 
 @lru_cache
 def get_engine() -> Engine:
     url = get_settings().database_url
     if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
+        raise AppError(503, "DATABASE_UNAVAILABLE", "Сервис временно недоступен.")
     return create_engine(url, pool_pre_ping=True, hide_parameters=True)
 
 

@@ -4,7 +4,7 @@
 
 ## Текущий статус
 
-Этап 4: React/TypeScript/Vite и FastAPI, фирменный стиль Soft Luxury, адаптивная главная (/), бренд-страница (/brand) и 404. API имеет /api/v1/health (liveness). Каталог, БД, авторизация и бронирование еще не реализованы. Публичного рабочего сайта пока нет. CI: проверки каркаса и дизайна прошли в GitHub Actions.
+Этап 6: React/TypeScript/Vite и FastAPI, фирменный стиль и адаптивные страницы, схема PostgreSQL из 12 таблиц и три миграции, регистрация CLIENT/MASTER, JWT/refresh и права CLIENT/MASTER/ADMIN. Реализованы вход, регистрация, профиль и защищенные маршруты кабинетов. Каталог и бронирование еще не реализованы. Публичного рабочего сайта пока нет. CI проверяет API на PostgreSQL и реальные браузерные сценарии авторизации.
 
 Пользователь подтвердил индивидуальный формат и сохранение расширенного объема: CLIENT, MASTER, ADMIN. Разрешение преподавателя на расширение относительно силлабуса пока не подтверждено. Срок: как можно раньше, календарный дедлайн не задан.
 
@@ -17,6 +17,9 @@ Copy-Item .env.example .env
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
 cd backend
+..\.venv\Scripts\python.exe scripts/configure_local.py
+# Configure private DATABASE_URL and DATABASE_URL_UNPOOLED in .env before migration.
+..\.venv\Scripts\python.exe -m alembic upgrade head
 ..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
@@ -59,7 +62,7 @@ cd backend
 - docs/report: матрица требований и непрерывный журнал.
 - Исходный TSX, syllabus, ODT и ZIP сохранены в корне как материалы, не как исполняемая часть.
 
-БД/ER, demo-доступы и production URL будут добавлены после реализации и проверки. Реальные локальные скриншоты интерфейса сохранены в локальном отчете. Не использовать вымышленные данные доступа. Health показывает только работоспособность процесса API, не готовность БД.
+Схема БД описана в backend/DATABASE.md; ER и доказательства доступны в локальном отчете. Production URL пока нет. Реальные локальные скриншоты интерфейса сохранены в локальном отчете. Не использовать вымышленные данные доступа. Health показывает только работоспособность процесса API, не готовность БД.
 
 Использование AI раскрыто в AI_USAGE.md. Полный план и критерии приемки: docs/audit/02_ROUTES_AND_ACCEPTANCE.md и docs/report/14_REQUIREMENTS_CHECKLIST.md.
 
@@ -73,3 +76,9 @@ cd backend
 
 Исходный прототип, силлабус, ZIP/ODT/текст ТЗ и локальный отчет не публикуются по решению пользователя. Ссылки на docs относятся к локальному комплекту проекта.
 
+
+## Авторизация
+
+Подробные контракты и настройки: backend/AUTH.md. Нет ключа JWT и паролей по умолчанию. Создание ADMIN — только через python -m app.cli со скрытым вводом пароля. COOKIE_SECURE=false допускается только для localhost; production требует HTTPS и Secure cookie. Access хранится в памяти, refresh — HttpOnly cookie. Logout отзывает refresh, скопированный access может действовать до 15 минут.
+
+В CI: 37 backend-тестов, 8 frontend-тестов и 3 Playwright-сценария. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, БД и frontend на адресах из playwright.config.mjs). Кабинеты показывают реальный профиль; рабочий каталог/бронирование добавляются на следующих этапах.

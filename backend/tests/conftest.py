@@ -3,10 +3,12 @@
 import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from secrets import token_urlsafe
 from uuid import uuid4
 
 import pytest
 from alembic.config import Config
+from auth_helpers import AuthAPI
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
@@ -14,6 +16,8 @@ from sqlalchemy.orm import Session
 from alembic import command
 from app.core.config import get_settings
 from app.db.models import Base, Category, MasterProfile, MasterService, Service, User
+from app.db.session import get_db
+from app.main import create_app
 
 
 @pytest.fixture(scope="session")
@@ -96,3 +100,16 @@ def booking_values(offer, offset=0):
         idempotency_key=uuid4(),
         request_hash="a" * 64,
     )
+
+
+@pytest.fixture
+def api(db, monkeypatch):
+    monkeypatch.setenv("JWT_SECRET", token_urlsafe(48))
+    monkeypatch.setenv("COOKIE_SECURE", "true")
+    monkeypatch.setenv("AUTH_RATE_LIMIT", "100")
+    get_settings.cache_clear()
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: db
+    yield AuthAPI(app)
+    app.dependency_overrides.clear()
+    get_settings.cache_clear()
