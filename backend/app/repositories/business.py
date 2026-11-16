@@ -149,7 +149,7 @@ class BusinessRepository:
         return self.db.scalar(
             select(User)
             .where(User.id == identifier)
-            .with_for_update()
+            .with_for_update(key_share=True)
             .execution_options(populate_existing=True)
         )
 

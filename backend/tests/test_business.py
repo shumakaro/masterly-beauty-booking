@@ -552,3 +552,37 @@ def test_admin_cancellation_requires_reason_and_preserves_status_rules(world):
         api.request("PATCH", f"/bookings/{item['id']}", json={"status": "COMPLETED"}).status_code
         == 409
     )
+
+
+def test_same_client_can_cancel_and_create_without_foreign_key_deadlock(world, pg_engine):
+    current = world.book().json()
+    token = access_token(world.actors["client"].id, "CLIENT")
+    app = create_app()
+
+    def independent_db():
+        with Session(pg_engine, expire_on_commit=False) as session:
+            yield session
+
+    app.dependency_overrides[get_db] = independent_db
+    for _ in range(3):
+        next_start = world.slots().json()["slots"][0]["starts_at"]
+        previous_id = current["id"]
+        barrier = Barrier(2)
+
+        def act(index, barrier=barrier, next_start=next_start, previous_id=previous_id):
+            client = AuthAPI(app)
+            client.token = token
+            barrier.wait(timeout=10)
+            if index == 0:
+                return client.request(
+                    "POST",
+                    "/bookings",
+                    headers={"Idempotency-Key": str(uuid4())},
+                    json={"master_service_id": str(world.offer.id), "starts_at": next_start},
+                )
+            return client.request("PATCH", f"/bookings/{previous_id}", json={"status": "CANCELLED"})
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            created, cancelled = list(pool.map(act, range(2)))
+        assert (created.status_code, cancelled.status_code) == (201, 200)
+        current = created.json()
