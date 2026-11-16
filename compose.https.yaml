@@ -1,0 +1,11 @@
+services:
+  web:
+    ports: !override ['0.0.0.0:80:8080', '0.0.0.0:443:8443']
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set the public hostname}
+    volumes:
+      - ./frontend/nginx/https.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ${TLS_CERT_DIR:?Set the certificate directory}:/etc/nginx/certs:ro
+      - ${ACME_DIR:?Set the ACME webroot}:/var/www/acme:ro
+    healthcheck:
+      test: [CMD, wget, -q, --spider, --no-check-certificate, https://127.0.0.1:8443/]

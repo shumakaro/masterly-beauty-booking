@@ -1,0 +1,65 @@
+name: Packaged deployment verification
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        protocol: [http, https]
+    env:
+      COMPOSE_FILE: compose.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create disposable private settings
+        run: |
+          python scripts/test_configure_compose.py
+          if [ '${{ matrix.protocol }}' = https ]; then
+            python scripts/configure_compose.py --origin https://localhost
+            mkdir -p "$RUNNER_TEMP/masterly-tls" "$RUNNER_TEMP/masterly-acme"
+            openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+              -keyout "$RUNNER_TEMP/masterly-tls/privkey.pem" \
+              -out "$RUNNER_TEMP/masterly-tls/fullchain.pem" \
+              -subj /CN=localhost -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
+            echo "TLS_CERT_DIR=$RUNNER_TEMP/masterly-tls" >> "$GITHUB_ENV"
+            echo "ACME_DIR=$RUNNER_TEMP/masterly-acme" >> "$GITHUB_ENV"
+            echo 'COMPOSE_FILE=compose.yaml:compose.https.yaml' >> "$GITHUB_ENV"
+          else
+            python scripts/configure_compose.py
+          fi
+      - name: Validate and start packaged application
+        run: |
+          docker compose version
+          docker compose --env-file .env.compose config --quiet
+          docker compose --env-file .env.compose up --build -d --wait --wait-timeout 180
+          test "$(docker compose --env-file .env.compose exec -T api id -u)" != 0
+      - name: Verify SPA, API, auth, database persistence and backup restore
+        run: |
+          if [ '${{ matrix.protocol }}' = https ]; then
+            python scripts/verify_compose.py --origin https://localhost --ca-file "$RUNNER_TEMP/masterly-tls/fullchain.pem"
+            test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/masters)" = 308
+          else
+            python scripts/verify_compose.py
+          fi
+      - name: Save runtime verification
+        if: always()
+        run: |
+          mkdir -p deployment-results
+          docker compose --env-file .env.compose ps --all > deployment-results/containers.txt
+          docker compose --env-file .env.compose logs --no-color --tail 100 > deployment-results/runtime.log
+          docker compose --env-file .env.compose images > deployment-results/images.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployment-${{ matrix.protocol }}
+          path: deployment-results/
+      - name: Remove disposable CI containers and volumes
+        if: always()
+        run: docker compose --env-file .env.compose down --volumes
