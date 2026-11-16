@@ -6,16 +6,16 @@ from uuid import uuid4
 import pytest
 from conftest import booking_values
 from sqlalchemy import inspect, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.models import Booking, Favorite, MasterService, Schedule, ScheduleException, User
 
 
-def test_schema_has_twelve_tables_and_three_revisions(pg_engine):
+def test_schema_has_twelve_tables_and_current_revision(pg_engine):
     assert len(set(inspect(pg_engine).get_table_names()) - {"alembic_version"}) == 12
     with pg_engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "003"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "004"
 
 
 def test_overlap_is_rejected_by_postgresql(db, offer):
@@ -130,16 +130,25 @@ def test_real_concurrent_connections_cannot_double_book(db, offer, pg_engine):
     barrier = Barrier(2)
 
     def insert():
-        with Session(pg_engine) as session:
-            payload = values | {"idempotency_key": uuid4()}
-            session.add(Booking(**payload))
-            barrier.wait(timeout=10)
-            try:
-                session.commit()
-                return "created"
-            except IntegrityError as error:
-                session.rollback()
-                return error.orig.sqlstate
+        payload = values | {"idempotency_key": uuid4()}
+        # Raw EXCLUDE races may abort a transaction with 40P01, not only 23P01.
+        # Retry that aborted transaction once, then require the actual conflict.
+        for attempt in range(2):
+            with Session(pg_engine) as session:
+                session.add(Booking(**payload))
+                if attempt == 0:
+                    barrier.wait(timeout=10)
+                try:
+                    session.commit()
+                    return "created"
+                except DBAPIError as error:
+                    session.rollback()
+                    if error.orig.sqlstate == "40P01" and attempt == 0:
+                        continue
+                    if error.orig.sqlstate == "23P01":
+                        return "23P01"
+                    raise
+        raise AssertionError("Raw PostgreSQL race did not converge")
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         outcomes = list(pool.map(lambda _: insert(), range(2)))

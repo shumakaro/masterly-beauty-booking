@@ -34,7 +34,7 @@ def pg_engine():
     engine = create_engine(url, hide_parameters=True)
     # Exercise every downgrade boundary, including complete rollback, on test DB only.
     command.upgrade(cfg, "head")
-    for target in ["002", "001", "base"]:
+    for target in ["003", "002", "001", "base"]:
         command.downgrade(cfg, target)
         command.upgrade(cfg, "head")
     assert set(Base.metadata.tables).issubset(inspect(engine).get_table_names())

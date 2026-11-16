@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.auth import clear_refresh
 from app.api.v1.auth import router as auth_router
+from app.api.v1.business import router as business_router
 from app.api.v1.health import router
 from app.core.config import get_settings
 from app.core.errors import AppError
@@ -95,6 +96,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
+        if any(item["type"] == "json_invalid" for item in exc.errors()):
+            return error_response(request, 400, "JSON_INVALID", "Некорректный JSON.")
         # Do not echo Pydantic input/ctx: they may contain a plaintext password.
         fields = [
             {
@@ -133,11 +136,12 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "DELETE"],
-        allow_headers=["Content-Type", "Authorization", "X-CSRF-Protection"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allow_headers=["Content-Type", "Authorization", "X-CSRF-Protection", "Idempotency-Key"],
     )
     app.include_router(router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(business_router, prefix="/api/v1")
     return app
 
 
