@@ -163,6 +163,10 @@ test("keyboard skip link, mobile disclosure, route focus and gallery trap", asyn
   await page.keyboard.press("Shift+Tab");
   await expect(close).toBeFocused();
   await audit(page, testInfo, "gallery");
+  await screenshot(page, {
+    path: testInfo.outputPath("gallery-keyboard.png"),
+    fullPage: false,
+  });
   await page.keyboard.press("Escape");
   await expect(enlarge).toBeFocused();
   expect(

@@ -125,7 +125,11 @@ export function ProfilePage() {
             autoComplete="name"
             {...form.register("display_name")}
             aria-invalid={!!form.formState.errors.display_name}
-            aria-describedby="profile-name-error"
+            aria-describedby={
+              form.formState.errors.display_name
+                ? "profile-name-error"
+                : undefined
+            }
           />
           {form.formState.errors.display_name && (
             <p className="field-error" id="profile-name-error">

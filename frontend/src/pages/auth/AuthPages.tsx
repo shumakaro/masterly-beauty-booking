@@ -156,7 +156,9 @@ export function LoginPage() {
             autoComplete="email"
             {...form.register("email")}
             aria-invalid={!!form.formState.errors.email}
-            aria-describedby="login-email-error"
+            aria-describedby={
+              form.formState.errors.email ? "login-email-error" : undefined
+            }
           />
           {form.formState.errors.email && (
             <p id="login-email-error" className="field-error">
@@ -272,7 +274,11 @@ export function RegisterPage() {
             autoComplete="name"
             {...form.register("display_name")}
             aria-invalid={!!form.formState.errors.display_name}
-            aria-describedby="register-name-error"
+            aria-describedby={
+              form.formState.errors.display_name
+                ? "register-name-error"
+                : undefined
+            }
           />
           {form.formState.errors.display_name && (
             <p id="register-name-error" className="field-error">
@@ -288,7 +294,9 @@ export function RegisterPage() {
             autoComplete="email"
             {...form.register("email")}
             aria-invalid={!!form.formState.errors.email}
-            aria-describedby="register-email-error"
+            aria-describedby={
+              form.formState.errors.email ? "register-email-error" : undefined
+            }
           />
           {form.formState.errors.email && (
             <p id="register-email-error" className="field-error">

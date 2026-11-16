@@ -232,6 +232,7 @@ function MasterImage({ master }: { master: Master }) {
   ) : (
     <div
       className="master-image master-monogram"
+      role="img"
       aria-label="Фотография пока не добавлена"
     >
       {master.display_name.slice(0, 1)}
