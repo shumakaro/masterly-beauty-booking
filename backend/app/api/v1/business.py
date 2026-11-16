@@ -12,6 +12,7 @@ from app.schemas.business import (
     AdminUserRead,
     AvailabilityRead,
     BookingCreate,
+    BookingOverview,
     BookingRead,
     BookingUpdate,
     CategoryCreate,
@@ -132,11 +133,13 @@ def masters(
     min_price: Annotated[Decimal | None, Query(ge=0, allow_inf_nan=False)] = None,
     max_price: Annotated[Decimal | None, Query(ge=0, allow_inf_nan=False)] = None,
     sort: Literal["name", "price_asc", "price_desc", "rating"] = "name",
+    available_on: date | None = None,
 ):
     return CatalogService(db).masters(
         paging.page,
         paging.page_size,
         sort,
+        available_on=available_on,
         category_id=category_id,
         search=search,
         min_price=min_price,
@@ -297,6 +300,11 @@ def create_booking(
 @router.get("/bookings", response_model=Page[BookingRead], tags=["Bookings"])
 def bookings(actor: ClientUser, db: Db, paging: Paging, status: Status | None = None):
     return AppointmentService(db).client_bookings(actor, paging.page, paging.page_size, status)
+
+
+@router.get("/overview", response_model=BookingOverview, tags=["Dashboard"])
+def own_overview(actor: CurrentUser, db: Db):
+    return AppointmentService(db).overview(actor)
 
 
 @router.get("/bookings/{identifier}", response_model=BookingRead, tags=["Bookings"])

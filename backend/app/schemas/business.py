@@ -322,6 +322,16 @@ class BookingRead(ReadModel):
     cancellation_reason: str | None
 
 
+class BookingOverview(BaseModel):
+    total: int = Field(ge=0)
+    confirmed: int = Field(ge=0)
+    upcoming: int = Field(ge=0)
+    completed: int = Field(ge=0)
+    cancelled: int = Field(ge=0)
+    completed_value: Decimal
+    currency: Literal["KZT"] = "KZT"
+
+
 class PortfolioCreate(StrictSchema):
     url: str = Field(max_length=1000)
     alt_text: str = Field(min_length=1, max_length=300)

@@ -1,6 +1,9 @@
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import any_, bindparam, delete, func, or_, select
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Session, aliased
 
 from app.db.models import (
@@ -46,14 +49,28 @@ class BusinessRepository:
         if category_id:
             stmt = stmt.where(Service.category_id == category_id)
         if search:
-            stmt = stmt.where(Service.name.ilike(self.search_pattern(search), escape="\\"))
+            pattern = self.search_pattern(search)
+            stmt = stmt.where(
+                or_(
+                    Service.name.ilike(pattern, escape="\\"),
+                    Service.description.ilike(pattern, escape="\\"),
+                )
+            )
         return self.paginate(stmt.order_by(Service.name, Service.id), page, size)
 
     @staticmethod
     def search_pattern(value: str):
         return "%" + value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 
-    def master_statement(self, *, category_id=None, search=None, min_price=None, max_price=None):
+    def master_statement(
+        self,
+        *,
+        category_id=None,
+        search=None,
+        min_price=None,
+        max_price=None,
+        available_offer_ids=None,
+    ):
         offers = (
             select(MasterService.master_id, func.min(MasterService.price).label("price_from"))
             .join(Service, Service.id == MasterService.service_id)
@@ -70,6 +87,8 @@ class BusinessRepository:
             offers = offers.where(MasterService.price >= min_price)
         if max_price is not None:
             offers = offers.where(MasterService.price <= max_price)
+        if available_offer_ids is not None:
+            offers = offers.where(self.uuid_in(MasterService.id, available_offer_ids))
         offers = offers.group_by(MasterService.master_id).subquery()
         ratings = (
             select(
@@ -105,7 +124,12 @@ class BusinessRepository:
                 User.role == "MASTER",
             )
         )
-        if category_id or min_price is not None or max_price is not None:
+        if (
+            category_id
+            or min_price is not None
+            or max_price is not None
+            or available_offer_ids is not None
+        ):
             stmt = stmt.where(offers.c.master_id.is_not(None))
         if search:
             pattern = self.search_pattern(search)
@@ -116,6 +140,74 @@ class BusinessRepository:
                 )
             )
         return stmt
+
+    @staticmethod
+    def uuid_in(column, values):
+        # One typed array parameter, including empty arrays and large catalogs.
+        return column == any_(bindparam(None, value=values, type_=ARRAY(PGUUID(as_uuid=True))))
+
+    def calendar_candidates(self, *, category_id=None, search=None, min_price=None, max_price=None):
+        candidates = (
+            self.master_statement(
+                category_id=category_id, search=search, min_price=min_price, max_price=max_price
+            )
+            .with_only_columns(MasterProfile.id)
+            .subquery()
+        )
+        stmt = (
+            select(
+                MasterService.id,
+                MasterService.master_id,
+                MasterService.duration_minutes,
+                MasterProfile.timezone,
+            )
+            .join(MasterProfile, MasterProfile.id == MasterService.master_id)
+            .join(Service, Service.id == MasterService.service_id)
+            .join(Category)
+            .where(
+                MasterService.master_id.in_(select(candidates.c.id)),
+                MasterService.is_active.is_(True),
+                Service.is_active.is_(True),
+                Category.is_active.is_(True),
+            )
+        )
+        if category_id:
+            stmt = stmt.where(Service.category_id == category_id)
+        if min_price is not None:
+            stmt = stmt.where(MasterService.price >= min_price)
+        if max_price is not None:
+            stmt = stmt.where(MasterService.price <= max_price)
+        return self.db.execute(
+            stmt.order_by(MasterService.master_id, MasterService.duration_minutes, MasterService.id)
+        ).all()
+
+    def calendar_batch(self, identifiers, day):
+        schedules, exceptions, busy = {}, {}, {}
+        for row in self.db.scalars(
+            select(Schedule)
+            .where(self.uuid_in(Schedule.master_id, identifiers), Schedule.weekday == day.weekday())
+            .order_by(Schedule.starts_local)
+        ):
+            schedules.setdefault(row.master_id, []).append((row.starts_local, row.ends_local))
+        for row in self.db.scalars(
+            select(ScheduleException).where(
+                self.uuid_in(ScheduleException.master_id, identifiers),
+                ScheduleException.local_date == day,
+            )
+        ):
+            exceptions[row.master_id] = row
+        beginning = datetime.combine(day, time(), tzinfo=UTC) - timedelta(days=2)
+        ending = beginning + timedelta(days=5)
+        for row in self.db.execute(
+            select(Booking.master_id, Booking.starts_at, Booking.ends_at).where(
+                self.uuid_in(Booking.master_id, identifiers),
+                Booking.status == "CONFIRMED",
+                Booking.starts_at < ending,
+                Booking.ends_at > beginning,
+            )
+        ):
+            busy.setdefault(row.master_id, []).append((row.starts_at, row.ends_at))
+        return schedules, exceptions, busy
 
     def masters(self, page, size, sort="name", **filters):
         stmt = self.master_statement(**filters)
@@ -310,6 +402,26 @@ class BusinessRepository:
         return self.paginate(
             stmt.order_by(Booking.starts_at.desc(), Booking.id), page, size, mappings=True
         )
+
+    def booking_overview(self, now, *, client_id=None, master_id=None):
+        stmt = select(
+            func.count(Booking.id).label("total"),
+            func.count(Booking.id).filter(Booking.status == "CONFIRMED").label("confirmed"),
+            func.count(Booking.id)
+            .filter(Booking.status == "CONFIRMED", Booking.starts_at > now)
+            .label("upcoming"),
+            func.count(Booking.id).filter(Booking.status == "COMPLETED").label("completed"),
+            func.count(Booking.id).filter(Booking.status == "CANCELLED").label("cancelled"),
+            func.coalesce(
+                func.sum(Booking.price_snapshot).filter(Booking.status == "COMPLETED"), 0
+            ).label("completed_value"),
+        )
+        stmt = (
+            stmt.where(Booking.client_id == client_id)
+            if client_id
+            else stmt.where(Booking.master_id == master_id)
+        )
+        return self.db.execute(stmt).mappings().one()
 
     def portfolio(self, master_id, page, size):
         return self.paginate(

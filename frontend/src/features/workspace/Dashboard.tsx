@@ -4,6 +4,7 @@ import { BookingsList, MyReviews } from "./Bookings";
 import { Favorites } from "./Favorites";
 import { AdminManagement, MasterManagement } from "./Management";
 import "./workspace.css";
+import { Overview } from "./Overview";
 
 const tabs = {
   CLIENT: [
@@ -37,6 +38,7 @@ export function Dashboard() {
     : "bookings";
   return (
     <div className="dashboard-workspace">
+      <Overview />
       <nav className="workspace-tabs" aria-label="Разделы кабинета">
         {options.map(([key, label]) => (
           <Link

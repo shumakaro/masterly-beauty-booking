@@ -14,6 +14,7 @@ from app.db.models import (
     Service,
 )
 from app.repositories.business import BusinessRepository
+from app.services.availability_search import AvailabilitySearch
 from app.services.common import apply_patch, change, found
 
 
@@ -220,13 +221,17 @@ class CatalogService:
             page, size, category_id=category_id, search=search, all_rows=admin
         )
 
-    def masters(self, page, size, sort, **filters):
+    def masters(self, page, size, sort, *, available_on=None, **filters):
         if (
             filters.get("min_price") is not None
             and filters.get("max_price") is not None
             and filters["min_price"] > filters["max_price"]
         ):
             raise AppError(422, "INVALID_PRICE_RANGE", "Минимальная цена больше максимальной.")
+        if available_on is not None:
+            filters["available_offer_ids"] = AvailabilitySearch(self.repo).offer_ids(
+                available_on, **filters
+            )
         return self.repo.masters(page, size, sort, **filters)
 
     def public_offers(self, master_id, page, size):
