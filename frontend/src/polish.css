@@ -142,6 +142,10 @@ textarea[aria-invalid="true"] {
 .auth-editorial em {
   color: #fffdf9;
 }
+/* Even a white pixel stays dark enough beneath the small white captions. */
+.auth-editorial > img {
+  filter: brightness(0.42);
+}
 .logo-gallery .dark-surface {
   background: #302c29;
   color: #f8f5ef;
