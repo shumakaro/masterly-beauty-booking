@@ -16,6 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", default="http://127.0.0.1:8080")
     parser.add_argument("--ca-file")
+    parser.add_argument("--services", nargs="+", default=[])
     args = parser.parse_args()
     context = ssl.create_default_context(cafile=args.ca_file)
     cookies = http.cookiejar.CookieJar()
@@ -83,7 +84,8 @@ def main():
     compose = ["docker", "compose", "--env-file", ".env.compose"]
     subprocess.run(compose + ["restart", "db", "api"], check=True)
     subprocess.run(
-        compose + ["up", "-d", "--wait", "--wait-timeout", "120"], check=True
+        compose + ["up", "-d", "--wait", "--wait-timeout", "120"] + args.services,
+        check=True,
     )
     with request(
         "/api/v1/auth/token", {"email": email, "password": password}

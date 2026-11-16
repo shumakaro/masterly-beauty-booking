@@ -1,0 +1,12 @@
+# Disposable CI verification of the single Render image, not a cloud resource.
+services:
+  api:
+    image: masterly-render:ci
+    build:
+      context: .
+      dockerfile: Dockerfile.render
+    environment:
+      PORT: '8000'
+    ports: ['127.0.0.1:8080:8000']
+    depends_on: !override
+      db: {condition: service_healthy}

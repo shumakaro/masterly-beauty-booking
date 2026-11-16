@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        protocol: [http, https]
+        protocol: [http, https, render]
     env:
       COMPOSE_FILE: compose.yaml
     steps:
@@ -33,18 +33,27 @@ jobs:
             echo 'COMPOSE_FILE=compose.yaml:compose.https.yaml' >> "$GITHUB_ENV"
           else
             python scripts/configure_compose.py
+            if [ '${{ matrix.protocol }}' = render ]; then
+              echo 'COMPOSE_FILE=compose.yaml:compose.render-test.yaml' >> "$GITHUB_ENV"
+            fi
           fi
       - name: Validate and start packaged application
         run: |
           docker compose version
           docker compose --env-file .env.compose config --quiet
-          docker compose --env-file .env.compose up --build -d --wait --wait-timeout 180
+          if [ '${{ matrix.protocol }}' = render ]; then
+            docker compose --env-file .env.compose up --build -d --wait --wait-timeout 180 api
+          else
+            docker compose --env-file .env.compose up --build -d --wait --wait-timeout 180
+          fi
           test "$(docker compose --env-file .env.compose exec -T api id -u)" != 0
       - name: Verify SPA, API, auth, database persistence and backup restore
         run: |
           if [ '${{ matrix.protocol }}' = https ]; then
             python scripts/verify_compose.py --origin https://localhost --ca-file "$RUNNER_TEMP/masterly-tls/fullchain.pem"
             test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/masters)" = 308
+          elif [ '${{ matrix.protocol }}' = render ]; then
+            python scripts/verify_compose.py --services api
           else
             python scripts/verify_compose.py
           fi
