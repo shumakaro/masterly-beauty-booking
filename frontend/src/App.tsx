@@ -26,6 +26,10 @@ import {
 } from "react-router-dom";
 import { useEffect } from "react";
 import { Brand } from "./shared/ui/Brand";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MasterPage, MastersPage, ServicesPage } from "./pages/CatalogPages";
+
+const queryClient = new QueryClient();
 
 const currentYear = new Date().getFullYear();
 
@@ -85,11 +89,11 @@ function Header() {
         className={open ? "navigation open" : "navigation"}
         aria-label="Основная навигация"
       >
-        <Link to="/#directions" onClick={() => setOpen(false)}>
-          Направления
+        <Link to="/masters" onClick={() => setOpen(false)}>
+          Мастера
         </Link>
-        <Link to="/#how-it-works" onClick={() => setOpen(false)}>
-          Как это работает
+        <Link to="/services" onClick={() => setOpen(false)}>
+          Услуги
         </Link>
         <Link to="/brand">Стиль MASTERLY</Link>
         <Link to={user ? homeForRole(user.role) : "/login"}>
@@ -159,9 +163,9 @@ function Home() {
               Место, где забота о себе становится
               <br className="desktop-break" /> красивой привычкой.
             </p>
-            <a className="button button-dark" href="#directions">
-              Найти свое направление <ArrowRight size={18} />
-            </a>
+            <Link className="button button-dark" to="/masters">
+              Найти своего мастера <ArrowRight size={18} />
+            </Link>
             <p className="hero-footnote">BEAUTY, ON YOUR TERMS.</p>
           </div>
           <div className="hero-art">
@@ -252,6 +256,9 @@ function Home() {
               {categories[selected].detail}
             </p>
           </div>
+          <Link className="text-link" to="/services">
+            Все услуги и направления <ArrowRight size={18} />
+          </Link>
         </section>
         <section
           className="ritual shell section-space"
@@ -326,7 +333,7 @@ function Home() {
         <aside className="development-note shell">
           <span className="status-dot" />
           MASTERLY в разработке. Онлайн-запись откроется после подключения
-          каталога и расписания.
+          оформления записи.
         </aside>
       </main>
     </>
@@ -487,61 +494,66 @@ function NotFound() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <PagePosition />
-        <a className="skip-link" href="#main">
-          Перейти к содержимому
-        </a>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/brand" element={<BrandPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute roles={["CLIENT"]}>
-                <AccountPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/master/dashboard"
-            element={
-              <ProtectedRoute roles={["MASTER"]}>
-                <AccountPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute roles={["ADMIN"]}>
-                <AccountPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <footer className="site-footer shell">
-          <Brand />
-          <p>Немного заботы. Каждый день.</p>
-          <Link to="/brand">
-            Фирменный стиль <ArrowRight size={15} />
-          </Link>
-          <span>© {currentYear} MASTERLY</span>
-        </footer>
-      </AuthProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <PagePosition />
+          <a className="skip-link" href="#main">
+            Перейти к содержимому
+          </a>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/brand" element={<BrandPage />} />
+            <Route path="/masters" element={<MastersPage />} />
+            <Route path="/masters/:id" element={<MasterPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute roles={["CLIENT"]}>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/master/dashboard"
+              element={
+                <ProtectedRoute roles={["MASTER"]}>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <footer className="site-footer shell">
+            <Brand />
+            <p>Немного заботы. Каждый день.</p>
+            <Link to="/brand">
+              Фирменный стиль <ArrowRight size={15} />
+            </Link>
+            <span>© {currentYear} MASTERLY</span>
+          </footer>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }

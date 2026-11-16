@@ -33,6 +33,15 @@
 * {
   box-sizing: border-box;
 }
+select {
+  font: inherit;
+  color: inherit;
+  max-width: 100%;
+}
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
 body {
   margin: 0;
 }
