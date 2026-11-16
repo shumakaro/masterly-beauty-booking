@@ -139,6 +139,11 @@ test("keyboard skip link, mobile disclosure, route focus and gallery trap", asyn
   await expect(menu).toBeFocused();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Enter");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Основная навигация" })
+      .getByRole("link", { name: "Мастера", exact: true }),
+  ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL("/masters");
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
