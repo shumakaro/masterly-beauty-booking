@@ -12,10 +12,12 @@ test("catalog uses real API filters, pagination, reload and browser history", as
   await page.reload();
   await expect(page.locator(".master-card")).toHaveCount(2);
   await page
-    .getByLabel("Направление", { exact: true })
+    .getByRole("combobox", { name: "Направление", exact: true })
     .selectOption({ label: "Волосы" });
   await page.getByLabel("Цена до, ₸").fill("3000");
-  await page.getByLabel("Сортировка").selectOption("price_desc");
+  await page
+    .getByRole("combobox", { name: "Сортировка", exact: true })
+    .selectOption("price_desc");
   await page.getByRole("button", { name: "Найти", exact: true }).click();
   await expect(page).not.toHaveURL(/page=2/);
   await expect(page.locator(".master-card")).toHaveCount(4);
@@ -130,6 +132,9 @@ test("services lead to their category and a missing profile offers recovery", as
     .click();
   await expect(page.locator(".master-card")).toHaveCount(1);
   await expect(page.locator(".master-card h2")).toHaveText("Демо Каталог 02");
+  await expect(
+    page.getByRole("combobox", { name: "Направление", exact: true }),
+  ).toHaveValue(new URL(page.url()).searchParams.get("category_id"));
   await page.goto("/masters/00000000-0000-4000-8000-000000000099");
   await expect(
     page.getByRole("heading", { name: "Мастер не найден." }),

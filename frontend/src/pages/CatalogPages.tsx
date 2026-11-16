@@ -146,6 +146,7 @@ function Filters({ masters }: { masters: boolean }) {
       <label>
         Направление
         <select
+          key={categories.data ? "loaded" : "loading"}
           name="category_id"
           defaultValue={filters.category}
           disabled={!categories.data}
@@ -514,7 +515,7 @@ function AvailabilityPanel({
       </h3>
       <p>
         Время мастера: {master.timezone}. Здесь можно проверить расписание;
-        оформление записи появится на следующем этапе.
+        оформление онлайн-записи пока недоступно.
       </p>
       <label>
         Дата посещения

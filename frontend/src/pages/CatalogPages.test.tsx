@@ -118,6 +118,26 @@ it("blocks invalid URLs without making a catalog request and allows reset", asyn
   ).toBeInTheDocument();
 });
 
+it("preserves a category from a direct URL when its label loads asynchronously", async () => {
+  let resolveCategories!: (value: unknown) => void;
+  const categories = new Promise((resolve) => {
+    resolveCategories = resolve;
+  });
+  vi.mocked(requestJson).mockImplementation(
+    async <T,>(path: string): Promise<T> => {
+      if (path.startsWith("categories")) return (await categories) as T;
+      return { items: [], total: 0, page: 1, page_size: 12 } as T;
+    },
+  );
+  show(`/masters?category_id=${id}`);
+  expect(screen.getByLabelText("Направление")).toBeDisabled();
+  resolveCategories({ items: [{ id, name: "Волосы" }], total: 1 });
+  await waitFor(() =>
+    expect(screen.getByLabelText("Направление")).toBeEnabled(),
+  );
+  expect(screen.getByLabelText("Направление")).toHaveValue(id);
+});
+
 it("recovers from an API failure with an explicit retry", async () => {
   let fail = true;
   vi.mocked(requestJson).mockImplementation(
