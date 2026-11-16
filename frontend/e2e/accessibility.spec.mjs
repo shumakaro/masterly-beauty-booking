@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { randomUUID } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import {
   fixtureMaster,
   fixturePassword,
@@ -36,8 +37,10 @@ async function audit(page, testInfo, name) {
       "best-practice",
     ])
     .analyze();
+  const file = testInfo.outputPath(`${name}-axe.json`);
+  await writeFile(file, JSON.stringify(report, null, 2));
   await testInfo.attach(`${name}-axe.json`, {
-    body: JSON.stringify(report, null, 2),
+    path: file,
     contentType: "application/json",
   });
   expect(
