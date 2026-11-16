@@ -209,9 +209,9 @@
   font-size: 0.7rem;
 }
 .status-confirmed {
-  color: #48604c;
-  border-color: #9eada0;
-  background: #f0f4ed;
+  color: var(--status-ink);
+  border-color: var(--control);
+  background: var(--status-bg);
 }
 .status-cancelled {
   color: var(--muted);

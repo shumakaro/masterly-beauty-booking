@@ -2,6 +2,8 @@ import { useRef, useState, type ReactNode } from "react";
 import "./catalog.css";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { FavoriteButton } from "../features/workspace/Favorites";
+import { LoadingState } from "../shared/ui/LoadingState";
+import { containDialogFocus } from "../shared/ui/dialogFocus";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star, X } from "lucide-react";
 import { ApiError, describeError } from "../shared/api/client";
@@ -31,11 +33,7 @@ function QueryContent<T>({
   empty?: string;
 }) {
   if (query.isPending)
-    return (
-      <p className="catalog-state" role="status">
-        Загружаем данные…
-      </p>
-    );
+    return <LoadingState label="Загружаем данные…" className="catalog-state" />;
   if (query.isError)
     return (
       <div className="catalog-state" role="alert">
@@ -234,6 +232,7 @@ function MasterImage({ master }: { master: Master }) {
   ) : (
     <div
       className="master-image master-monogram"
+      role="img"
       aria-label="Фотография пока не добавлена"
     >
       {master.display_name.slice(0, 1)}
@@ -462,6 +461,7 @@ function PortfolioImage({ item }: { item: Portfolio }) {
       </figcaption>
       <dialog
         className="portfolio-dialog"
+        onKeyDown={containDialogFocus}
         ref={dialog}
         aria-label={item.alt_text}
       >

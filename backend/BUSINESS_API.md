@@ -46,4 +46,4 @@ ADMIN: CRUD /categories и /services; /admin/categories и /admin/services по�
 
 Интеграционные тесты требуют TEST_DATABASE_URL с суффиксом _test и очищают только эту одноразовую БД. Проверяются реальные HTTP-запросы, конкурентные подключения, идемпотентность, календарь/DST, права/IDOR, отзыв, избранное, CRUD, SQL pagination и число запросов каталога. Результат CI и планы предыдущих индексов сохраняются в database-verification. Playwright проверяет авторизацию, каталог, запись/конфликт/повтор/отмену и кабинеты на настоящей БД.
 
-Историческая проверка бизнес-API a35fe22: 64 backend-теста (0 failures/errors/skipped). Источник: https://github.com/shumakaro/masterly-beauty-booking/actions/runs/43783682584 . Текущий набор содержит также 16 frontend-тестов и 12 браузерных сценариев; результаты актуальной ветки доступны в GitHub Actions.
+Историческая проверка бизнес-API a35fe22: 64 backend-теста (0 failures/errors/skipped). Источник: https://github.com/shumakaro/masterly-beauty-booking/actions/runs/43783682584 . Актуальный состав frontend и браузерных проверок перечислен в README; результаты проверенного коммита доступны в GitHub Actions.

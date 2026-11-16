@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Link,
@@ -48,6 +48,16 @@ function BookingForm({ master, offers }: { master: Master; offers: Offer[] }) {
   const [start, setStart] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [uncertain, setUncertain] = useState(false);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  const continueButton = useRef<HTMLButtonElement>(null);
+  const previousStep = useRef(confirm);
+  useEffect(() => {
+    if (confirm !== previousStep.current) {
+      previousStep.current = confirm;
+      if (confirm) stepHeading.current?.focus();
+      else continueButton.current?.focus();
+    }
+  }, [confirm]);
   const locked = useRef(false);
   const write = useWrite<Booking>();
   const offer = offers.find((item) => item.id === params.get("offer"));
@@ -78,7 +88,7 @@ function BookingForm({ master, offers }: { master: Master; offers: Offer[] }) {
         <li aria-current={confirm ? "step" : undefined}>02 · Подтверждение</li>
         <li>03 · Ваша запись</li>
       </ol>
-      <Feedback error={write.error} />
+      <Feedback error={write.error} focus />
       {write.error instanceof ApiError && write.error.status === 409 && (
         <p role="status">
           Условия записи изменились. Расписание обновлено — выберите доступное
@@ -205,6 +215,7 @@ function BookingForm({ master, offers }: { master: Master; offers: Offer[] }) {
               </DataPanel>
             ))}
           <button
+            ref={continueButton}
             className="button button-dark"
             disabled={!selected || !valid || slots.isFetching || slots.isError}
             onClick={() => {
@@ -218,7 +229,9 @@ function BookingForm({ master, offers }: { master: Master; offers: Offer[] }) {
       ) : (
         offer && (
           <section className="booking-confirm">
-            <h2>Все верно?</h2>
+            <h2 ref={stepHeading} tabIndex={-1}>
+              Все верно?
+            </h2>
             <dl className="detail-list">
               <div>
                 <dt>Мастер</dt>

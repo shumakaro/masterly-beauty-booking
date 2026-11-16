@@ -3,8 +3,7 @@ import { useAuth } from "./features/auth/authState";
 import { ProtectedRoute } from "./features/auth/ProtectedRoute";
 import { homeForRole } from "./features/auth/paths";
 import { LoginPage, RegisterPage } from "./pages/auth/AuthPages";
-import { AccountPage, ProfilePage } from "./pages/AccountPage";
-import { useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -17,20 +16,37 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import {
-  BrowserRouter,
-  Link,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
-import { useEffect } from "react";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { Brand } from "./shared/ui/Brand";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MasterPage, MastersPage, ServicesPage } from "./pages/CatalogPages";
-import { BookingPage } from "./pages/BookingPage";
-import { BookingDetailsPage } from "./features/workspace/Bookings";
 import { WorkspaceRedirect } from "./features/workspace/WorkspaceRedirect";
+import { ThemeProvider } from "./features/theme/ThemeProvider";
+import { ThemePicker } from "./features/theme/ThemePicker";
+import { PagePosition } from "./shared/ui/PagePosition";
+import { ViewportEffects } from "./shared/ui/ViewportEffects";
+import { LoadingState } from "./shared/ui/LoadingState";
+
+const AccountPage = lazy(() =>
+  import("./pages/AccountPage").then((module) => ({
+    default: module.AccountPage,
+  })),
+);
+const ProfilePage = lazy(() =>
+  import("./pages/AccountPage").then((module) => ({
+    default: module.ProfilePage,
+  })),
+);
+const BookingPage = lazy(() =>
+  import("./pages/BookingPage").then((module) => ({
+    default: module.BookingPage,
+  })),
+);
+const BookingDetailsPage = lazy(() =>
+  import("./features/workspace/Bookings").then((module) => ({
+    default: module.BookingDetailsPage,
+  })),
+);
 
 const queryClient = new QueryClient();
 
@@ -73,14 +89,14 @@ const categories = [
     icon: Scissors,
     description: "Стрижки, окрашивание и уход",
     detail:
-      "От нового силуэта до бережного ухода. В профиле мастера будут собраны услуги, длительность и стоимость.",
+      "От нового силуэта до бережного ухода. В профиле мастера собраны услуги, длительность и стоимость.",
   },
   {
     name: "Ногти",
     icon: Sparkles,
     description: "Маникюр и педикюр",
     detail:
-      "Лаконичный нюд или яркий акцент. Вы сможете выбрать технику и посмотреть портфолио перед записью.",
+      "Лаконичный нюд или яркий акцент. Выберите технику и посмотрите портфолио перед записью.",
   },
   {
     name: "Макияж",
@@ -101,24 +117,48 @@ const categories = [
 function Header() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const navigation = useRef<HTMLElement>(null);
   return (
     <header
       className="site-header shell"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          setOpen(false);
+          toggle.current?.focus();
+        }
+      }}
+      onBlur={(event) => {
+        if (
+          event.relatedTarget &&
+          !event.currentTarget.contains(event.relatedTarget)
+        )
+          setOpen(false);
+      }}
       onClick={(event) => {
         if ((event.target as Element).closest("a")) setOpen(false);
       }}
     >
       <Brand />
+      <ThemePicker />
       <button
+        ref={toggle}
         className="menu-toggle icon-button"
         aria-label={open ? "Закрыть меню" : "Открыть меню"}
         aria-expanded={open}
         aria-controls="navigation"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open);
+          if (!open)
+            requestAnimationFrame(() =>
+              navigation.current?.querySelector("a")?.focus(),
+            );
+        }}
       >
         {open ? <X /> : <Menu />}
       </button>
       <nav
+        ref={navigation}
         id="navigation"
         className={open ? "navigation open" : "navigation"}
         aria-label="Основная навигация"
@@ -136,15 +176,6 @@ function Header() {
       </nav>
     </header>
   );
-}
-
-function PagePosition() {
-  const { pathname, hash } = useLocation();
-  useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
-    else window.scrollTo(0, 0);
-  }, [pathname, hash]);
-  return null;
 }
 
 function EditorialImage({
@@ -366,8 +397,7 @@ function Home() {
         </section>
         <aside className="development-note shell">
           <span className="status-dot" />
-          MASTERLY в разработке. Каталог и онлайн-запись доступны после
-          подключения API.
+          Ваш мастер. Ваш ритм. Ваше время.
         </aside>
       </main>
     </>
@@ -528,93 +558,107 @@ function NotFound() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <PagePosition />
-          <a className="skip-link" href="#main">
-            Перейти к содержимому
-          </a>
-          <Header />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/brand" element={<BrandPage />} />
-            <Route path="/masters" element={<MastersPage />} />
-            <Route path="/masters/:id" element={<MasterPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route
-              path="/book/:masterId"
-              element={
-                <ProtectedRoute roles={["CLIENT"]}>
-                  <BookingPage />
-                </ProtectedRoute>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <PagePosition />
+            <ViewportEffects />
+            <a className="skip-link" href="#main">
+              Перейти к содержимому
+            </a>
+            <Header />
+            <Suspense
+              fallback={
+                <main id="main" className="shell">
+                  <LoadingState
+                    label="Загружаем…"
+                    className="workspace-state"
+                  />
+                </main>
               }
-            />
-            <Route
-              path="/bookings/:id"
-              element={
-                <ProtectedRoute>
-                  <BookingDetailsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            {workspaceRoutes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={
-                  <ProtectedRoute roles={[route.role]}>
-                    <WorkspaceRedirect to={route.to} tab={route.tab} />
-                  </ProtectedRoute>
-                }
-              />
-            ))}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute roles={["CLIENT"]}>
-                  <AccountPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/master/dashboard"
-              element={
-                <ProtectedRoute roles={["MASTER"]}>
-                  <AccountPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute roles={["ADMIN"]}>
-                  <AccountPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <footer className="site-footer shell">
-            <Brand />
-            <p>Немного заботы. Каждый день.</p>
-            <Link to="/brand">
-              Фирменный стиль <ArrowRight size={15} />
-            </Link>
-            <span>© {currentYear} MASTERLY</span>
-          </footer>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+            >
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/brand" element={<BrandPage />} />
+                <Route path="/masters" element={<MastersPage />} />
+                <Route path="/masters/:id" element={<MasterPage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route
+                  path="/book/:masterId"
+                  element={
+                    <ProtectedRoute roles={["CLIENT"]}>
+                      <BookingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bookings/:id"
+                  element={
+                    <ProtectedRoute>
+                      <BookingDetailsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                {workspaceRoutes.map((route) => (
+                  <Route
+                    key={route.path}
+                    path={route.path}
+                    element={
+                      <ProtectedRoute roles={[route.role]}>
+                        <WorkspaceRedirect to={route.to} tab={route.tab} />
+                      </ProtectedRoute>
+                    }
+                  />
+                ))}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute roles={["CLIENT"]}>
+                      <AccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/master/dashboard"
+                  element={
+                    <ProtectedRoute roles={["MASTER"]}>
+                      <AccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute roles={["ADMIN"]}>
+                      <AccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <footer className="site-footer shell">
+              <Brand />
+              <p>Немного заботы. Каждый день.</p>
+              <Link to="/brand">
+                Фирменный стиль <ArrowRight size={15} />
+              </Link>
+              <span>© {currentYear} MASTERLY</span>
+            </footer>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
