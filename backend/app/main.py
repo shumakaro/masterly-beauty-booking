@@ -17,6 +17,7 @@ from app.api.v1.business import router as business_router
 from app.api.v1.health import router
 from app.core.config import get_settings
 from app.core.errors import AppError
+from app.static import CSP, SPAFiles
 
 logger = logging.getLogger("masterly.requests")
 
@@ -44,7 +45,12 @@ def error_response(request: Request, status: int, code: str, message: str, field
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title=settings.app_name, version="0.2.0")
+    app = FastAPI(
+        title=settings.app_name,
+        version="0.2.0",
+        docs_url=None if settings.static_dir else "/docs",
+        redoc_url=None if settings.static_dir else "/redoc",
+    )
     attempts = defaultdict(deque)
     limiter_lock = Lock()
 
@@ -83,6 +89,11 @@ def create_app() -> FastAPI:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
+        if settings.static_dir:
+            response.headers["Content-Security-Policy"] = CSP
+            response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+            if settings.cookie_secure:
+                response.headers["Strict-Transport-Security"] = "max-age=31536000"
         if request.url.path.startswith("/api/v1/"):
             response.headers["Cache-Control"] = "no-store"
         logger.info(
@@ -146,6 +157,8 @@ def create_app() -> FastAPI:
     app.include_router(router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(business_router, prefix="/api/v1")
+    if settings.static_dir:
+        app.mount("/", SPAFiles(settings.static_dir), name="frontend")
     return app
 
 

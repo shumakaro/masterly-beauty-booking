@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Avoid even the caught new Function probe under a strict production CSP.
+z.config({ jitless: true });
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Введите корректный email").max(254),
   password: z.string().min(1, "Введите пароль"),

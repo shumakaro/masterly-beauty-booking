@@ -14,6 +14,10 @@ coverage/
 *.log
 *.pem
 *.key
+*.dump
+deployment-results/
+.neon
+.neon/
 
 *.egg-info/
 

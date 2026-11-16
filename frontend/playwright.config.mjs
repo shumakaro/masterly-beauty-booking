@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: "**/cross-browser.spec.mjs",
+  testIgnore: ["**/cross-browser.spec.mjs", "**/packaged.spec.mjs"],
   fullyParallel: false,
   workers: 1,
   timeout: 45000,

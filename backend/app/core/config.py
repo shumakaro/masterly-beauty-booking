@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -10,6 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str | None = None
     database_url_unpooled: str | None = None
+    static_dir: Path | None = None
     jwt_secret: SecretStr | None = None
     cookie_secure: bool = True
     auth_rate_limit: int = Field(default=20, ge=1, le=1000)
