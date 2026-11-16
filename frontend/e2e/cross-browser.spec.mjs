@@ -45,9 +45,16 @@ test("available date survives catalog, profile and booking; empty dates can be c
     page.getByRole("link", { name: "Записаться", exact: true }),
   ).toHaveAttribute("href", new RegExp(`date=${date}`));
   await page.getByRole("link", { name: "Перейти к записи" }).click();
-  await expect(page).toHaveURL(/\/login\?from=/);
-  const from = new URL(page.url()).searchParams.get("from");
-  expect(from).toContain(`date=${date}`);
+  await expect(page).toHaveURL(/\/login$/);
+  // ProtectedRoute keeps the return address in router state.
+  // Verify the actual return after authentication instead of assuming a query parameter.
+  const credentials = await registerClient(request);
+  await page.getByLabel("Email", { exact: true }).fill(credentials.email);
+  await page.getByLabel("Пароль", { exact: true }).fill(credentials.password);
+  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/book/${master.id}.*date=${date}`));
+  await expect(page.getByLabel("Дата посещения")).toHaveValue(date);
+  await expect(page.locator(".slot-options label").first()).toBeVisible();
   await page.goto("/masters?available_on=2030-02-30");
   await expect(page.getByRole("alert")).toContainText("Проверьте фильтры");
   await page.getByRole("link", { name: "Сбросить", exact: true }).click();

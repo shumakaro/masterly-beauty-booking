@@ -49,7 +49,13 @@ class BusinessRepository:
         if category_id:
             stmt = stmt.where(Service.category_id == category_id)
         if search:
-            stmt = stmt.where(Service.name.ilike(self.search_pattern(search), escape="\\"))
+            pattern = self.search_pattern(search)
+            stmt = stmt.where(
+                or_(
+                    Service.name.ilike(pattern, escape="\\"),
+                    Service.description.ilike(pattern, escape="\\"),
+                )
+            )
         return self.paginate(stmt.order_by(Service.name, Service.id), page, size)
 
     @staticmethod

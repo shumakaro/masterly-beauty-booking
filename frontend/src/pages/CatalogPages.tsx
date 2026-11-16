@@ -287,8 +287,8 @@ export function MastersPage() {
       <Filters masters />
       {!filters.valid ? (
         <p className="catalog-state" role="alert">
-          Проверьте фильтры: корректное направление, страница от 1 и цена «от»
-          не выше цены «до».
+          Проверьте фильтры: корректные направление и дата, страница от 1 и цена
+          «от» не выше цены «до».
         </p>
       ) : (
         <QueryContent query={query}>

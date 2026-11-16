@@ -11,6 +11,15 @@ from app.services import appointments, availability_search
 pytest_plugins = ["test_business"]
 
 
+def test_service_search_includes_description_and_treats_wildcards_as_text(world, db):
+    world.service.description = "Care 100%_natural"
+    db.commit()
+    api = world.as_actor("client")
+    for search, total in [("natural", 1), ("100%_", 1), ("missing%", 0), ("' OR 1=1 --", 0)]:
+        response = api.request("GET", "/services", params={"search": search})
+        assert response.status_code == 200 and response.json()["total"] == total
+
+
 def test_date_search_filters_matching_offers_and_releases_cancelled_time(world, db):
     world.schedule.ends_local = time(9, 30)
     service = Service(category_id=world.category.id, name="Short care")
