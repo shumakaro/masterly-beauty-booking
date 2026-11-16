@@ -144,7 +144,8 @@ test("a guest returns to the selected offer after sign-in and can save a favorit
   await expect(
     page.getByRole("button", { name: "В избранном · убрать" }),
   ).toHaveAttribute("aria-pressed", "true");
-  await page.goto("/dashboard?tab=favorites");
+  await page.goto("/favorites");
+  await expect(page).toHaveURL("/dashboard?tab=favorites");
   await expect(page.locator(".resource-item h3")).toHaveText(
     master.display_name,
   );

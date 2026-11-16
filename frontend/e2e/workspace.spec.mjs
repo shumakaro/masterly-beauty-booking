@@ -87,7 +87,8 @@ test("master manages offers, work intervals, special dates, profile and portfoli
     email: "catalog-0@example.test",
     password: fixturePassword(),
   });
-  await page.getByRole("link", { name: "Мои услуги", exact: true }).click();
+  await page.goto("/master/services");
+  await expect(page).toHaveURL("/master/dashboard?tab=offers");
   let form = await openCreate(page);
   await form
     .getByRole("combobox", { name: "Услуга каталога", exact: true })
@@ -244,7 +245,8 @@ test("administrator manages catalog, visibility, user status and reasoned cancel
     page.locator(".resource-item").filter({ hasText: "Тестовое направление" }),
   );
   const client = await registerClient(request);
-  await page.getByRole("link", { name: "Пользователи", exact: true }).click();
+  await page.goto("/admin/users");
+  await expect(page).toHaveURL("/admin?tab=users");
   item = page.locator(".resource-item").filter({ hasText: client.email });
   await item.getByRole("button", { name: "Изменить", exact: true }).click();
   await item.getByLabel("Активно", { exact: true }).uncheck();

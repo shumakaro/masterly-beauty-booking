@@ -30,10 +30,42 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MasterPage, MastersPage, ServicesPage } from "./pages/CatalogPages";
 import { BookingPage } from "./pages/BookingPage";
 import { BookingDetailsPage } from "./features/workspace/Bookings";
+import { WorkspaceRedirect } from "./features/workspace/WorkspaceRedirect";
 
 const queryClient = new QueryClient();
 
 const currentYear = new Date().getFullYear();
+const workspaceRoutes = [
+  { path: "/bookings", role: "CLIENT", to: "/dashboard", tab: "bookings" },
+  { path: "/favorites", role: "CLIENT", to: "/dashboard", tab: "favorites" },
+  {
+    path: "/master/services",
+    role: "MASTER",
+    to: "/master/dashboard",
+    tab: "offers",
+  },
+  {
+    path: "/master/schedule",
+    role: "MASTER",
+    to: "/master/dashboard",
+    tab: "schedules",
+  },
+  {
+    path: "/master/bookings",
+    role: "MASTER",
+    to: "/master/dashboard",
+    tab: "bookings",
+  },
+  {
+    path: "/master/profile",
+    role: "MASTER",
+    to: "/master/dashboard",
+    tab: "business-profile",
+  },
+  { path: "/admin/users", role: "ADMIN", to: "/admin", tab: "users" },
+  { path: "/admin/masters", role: "ADMIN", to: "/admin", tab: "masters" },
+  { path: "/admin/bookings", role: "ADMIN", to: "/admin", tab: "bookings" },
+] as const;
 
 const categories = [
   {
@@ -528,6 +560,17 @@ export default function App() {
             />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            {workspaceRoutes.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  <ProtectedRoute roles={[route.role]}>
+                    <WorkspaceRedirect to={route.to} tab={route.tab} />
+                  </ProtectedRoute>
+                }
+              />
+            ))}
             <Route
               path="/dashboard"
               element={
