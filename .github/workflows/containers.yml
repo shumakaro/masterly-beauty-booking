@@ -48,6 +48,19 @@ jobs:
           else
             python scripts/verify_compose.py
           fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify the built UI in Chromium through Nginx
+        run: |
+          cd frontend
+          npm ci
+          npx playwright install --with-deps chromium
+          if [ '${{ matrix.protocol }}' = https ]; then
+            PACKAGED_ORIGIN=https://localhost PACKAGED_TEST_SELF_SIGNED=1 npx playwright test --config playwright.packaged.config.mjs
+          else
+            npx playwright test --config playwright.packaged.config.mjs
+          fi
       - name: Save runtime verification
         if: always()
         run: |
