@@ -104,9 +104,20 @@ textarea::placeholder {
 .field-error {
   color: var(--error);
 }
+:root .workspace-form input[aria-invalid="true"],
+:root .workspace-form select[aria-invalid="true"],
+:root .workspace-form textarea[aria-invalid="true"],
 input[aria-invalid="true"],
 select[aria-invalid="true"],
 textarea[aria-invalid="true"] {
+  border-color: var(--error);
+}
+:root .workspace-form :is(input:not([type="checkbox"]), select, textarea),
+:root .workspace-filter select,
+:root .booking-form > label > :is(input, select) {
+  border-color: var(--control);
+}
+:root .workspace-form :is(input, select, textarea)[aria-invalid="true"] {
   border-color: var(--error);
 }
 .form-error {
