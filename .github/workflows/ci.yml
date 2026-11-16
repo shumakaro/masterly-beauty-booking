@@ -5,6 +5,20 @@ on:
 permissions:
   contents: read
 jobs:
+  dependency-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pip-audit==2.10.1
+      - run: pip-audit -r backend/requirements.txt --no-deps --disable-pip --format=json --output pip-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-security
+          path: pip-audit.json
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -20,6 +34,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=low
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -81,7 +96,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
       - name: Prepare disposable browser catalog
         run: python -m scripts.seed_browser
       - name: Run real browser authentication and catalog against PostgreSQL
@@ -97,6 +112,7 @@ jobs:
           done
           cd ../frontend
           npx playwright test
+          npx playwright test --config playwright.cross-browser.config.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -25,10 +25,9 @@ def interval_fits(starts: datetime, duration: int, working: set[datetime]) -> bo
     return all(starts + MINUTE * index in working for index in range(duration))
 
 
-def available_starts(
+def iter_available_starts(
     working: set[datetime], duration: int, busy, zone: ZoneInfo, now: datetime
-) -> list[datetime]:
-    result = []
+):
     for starts in sorted(working):
         local = starts.astimezone(zone)
         if local.minute % 15 or starts <= now:
@@ -37,5 +36,8 @@ def available_starts(
         if interval_fits(starts, duration, working) and not any(
             starts < stop and ends > begin for begin, stop in busy
         ):
-            result.append(starts)
-    return result
+            yield starts
+
+
+def available_starts(working, duration, busy, zone, now) -> list[datetime]:
+    return list(iter_available_starts(working, duration, busy, zone, now))

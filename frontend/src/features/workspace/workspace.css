@@ -2,6 +2,33 @@
   min-height: 65vh;
   padding-block: 45px 90px;
 }
+.overview-section {
+  margin-block: 35px;
+}
+.overview-section > h2 {
+  font-size: 2.8rem;
+  margin-bottom: 25px;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 18px;
+}
+.overview-grid > div {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.overview-grid dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.8;
+}
+.overview-grid dd {
+  margin: 15px 0 0;
+  font-size: 1.4rem;
+  overflow-wrap: anywhere;
+}
 .workspace-page > .eyebrow {
   margin-top: 35px;
 }

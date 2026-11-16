@@ -240,6 +240,15 @@ class AppointmentService:
     def client_bookings(self, actor, page, size, status):
         return self.repo.bookings(page, size, client_id=actor.id, status=status)
 
+    def overview(self, actor):
+        if actor.role == "CLIENT":
+            return self.repo.booking_overview(now_utc(), client_id=actor.id)
+        if actor.role == "MASTER":
+            return self.repo.booking_overview(
+                now_utc(), master_id=self.catalog.own_master(actor).id
+            )
+        raise AppError(403, "FORBIDDEN", "Используйте обзор администратора.")
+
     def master_bookings(self, actor, page, size, status):
         master = self.catalog.own_master(actor)
         return self.repo.bookings(page, size, master_id=master.id, status=status)

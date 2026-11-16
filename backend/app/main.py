@@ -22,17 +22,23 @@ logger = logging.getLogger("masterly.requests")
 
 
 def error_response(request: Request, status: int, code: str, message: str, fields=None):
+    request_id = getattr(request.state, "request_id", str(uuid4()))
     response = JSONResponse(
         status_code=status,
         content={
             "error": {"code": code, "message": message, "fields": fields or []},
-            "request_id": getattr(request.state, "request_id", str(uuid4())),
+            "request_id": request_id,
         },
     )
     if status == 401:
         response.headers["WWW-Authenticate"] = "Bearer"
         if request.url.path == "/api/v1/auth/refresh":
             clear_refresh(response)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Request-ID"] = request_id
     return response
 
 
@@ -77,9 +83,7 @@ def create_app() -> FastAPI:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
-        if request.url.path.startswith(
-            ("/api/v1/auth", "/api/v1/users", "/api/v1/master", "/api/v1/admin")
-        ):
+        if request.url.path.startswith("/api/v1/"):
             response.headers["Cache-Control"] = "no-store"
         logger.info(
             "%s %s %s request_id=%s",

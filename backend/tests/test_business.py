@@ -14,12 +14,13 @@ from app.core.security import access_token
 from app.db.models import Category, MasterProfile, MasterService, Schedule, Service, User
 from app.db.session import get_db
 from app.main import create_app
-from app.services import appointments
+from app.services import appointments, availability_search
 
 
 @pytest.fixture
 def world(api, db, monkeypatch):
     monkeypatch.setattr(appointments, "now_utc", lambda: datetime(2030, 1, 7, tzinfo=UTC))
+    monkeypatch.setattr(availability_search, "now_utc", lambda: datetime(2030, 1, 7, tzinfo=UTC))
     actors = {}
     for name, role in [
         ("admin", "ADMIN"),

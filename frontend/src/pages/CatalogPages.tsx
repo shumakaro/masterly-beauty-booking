@@ -197,6 +197,14 @@ function Filters({ masters }: { masters: boolean }) {
               <option value="rating">По рейтингу</option>
             </select>
           </label>
+          <label>
+            Свободная дата
+            <input
+              type="date"
+              name="available_on"
+              defaultValue={filters.availableOn}
+            />
+          </label>
         </>
       )}
       <div className="filter-actions">
@@ -207,6 +215,12 @@ function Filters({ masters }: { masters: boolean }) {
           Сбросить
         </Link>
       </div>
+      {masters && (
+        <p className="filter-note">
+          Дата в часовом поясе мастера, до 90 дней вперед. Показываем мастеров с
+          подходящими свободными услугами.
+        </p>
+      )}
       {categories.isError && (
         <p className="filter-note" role="alert">
           Направления не загрузились.{" "}
@@ -293,7 +307,7 @@ export function MastersPage() {
                 {data.items.map((master) => (
                   <article className="master-card" key={master.id}>
                     <Link
-                      to={`/masters/${master.id}`}
+                      to={`/masters/${master.id}${filters.availableOn ? `?date=${filters.availableOn}` : ""}`}
                       className="master-photo-link"
                       aria-label={`Профиль: ${master.display_name}`}
                     >
@@ -304,7 +318,9 @@ export function MastersPage() {
                         <span className="badge">Демо-профиль</span>
                       )}
                       <h2>
-                        <Link to={`/masters/${master.id}`}>
+                        <Link
+                          to={`/masters/${master.id}${filters.availableOn ? `?date=${filters.availableOn}` : ""}`}
+                        >
                           {master.display_name}
                         </Link>
                       </h2>
@@ -325,7 +341,7 @@ export function MastersPage() {
                             : `от ${money(master.price_from)}`}
                         </span>
                         <Link
-                          to={`/masters/${master.id}`}
+                          to={`/masters/${master.id}${filters.availableOn ? `?date=${filters.availableOn}` : ""}`}
                           aria-label={`Подробнее: ${master.display_name}`}
                         >
                           <ArrowRight size={20} />
@@ -483,15 +499,17 @@ function PortfolioImage({ item }: { item: Portfolio }) {
 function AvailabilityPanel({
   master,
   offer,
+  initialDate,
 }: {
   master: Master;
   offer: Offer;
+  initialDate: string;
 }) {
   const today = localDate(master.timezone);
   const end = new Date(`${today}T00:00:00Z`);
   end.setUTCDate(end.getUTCDate() + 90);
   const maximum = end.toISOString().slice(0, 10);
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate || today);
   const valid =
     /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && date <= maximum;
   const query = useCatalogQuery<Availability>(
@@ -624,7 +642,7 @@ function MasterDetails({ master }: { master: Master }) {
                       <strong>{money(offer.price)}</strong>
                       <Link
                         className="button button-dark"
-                        to={`/book/${master.id}?offer=${offer.id}`}
+                        to={`/book/${master.id}?offer=${offer.id}${params.get("date") ? `&date=${encodeURIComponent(params.get("date")!)}` : ""}`}
                       >
                         Записаться
                       </Link>
@@ -652,6 +670,7 @@ function MasterDetails({ master }: { master: Master }) {
             key={selected.id}
             master={master}
             offer={selected}
+            initialDate={params.get("date") ?? ""}
           />
         )}
       </section>

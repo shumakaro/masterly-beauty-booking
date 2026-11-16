@@ -82,6 +82,9 @@ it("submits filters into the URL, resets pagination and keeps filters when pagin
   fireEvent.change(screen.getByLabelText("Цена до, ₸"), {
     target: { value: "3000" },
   });
+  fireEvent.change(screen.getByLabelText("Свободная дата"), {
+    target: { value: "2030-01-08" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Найти" }));
   await waitFor(() =>
     expect(screen.getByLabelText("Адрес")).toHaveTextContent(
@@ -95,6 +98,12 @@ it("submits filters into the URL, resets pagination and keeps filters when pagin
   );
   expect(screen.getByLabelText("Адрес")).toHaveTextContent(`category_id=${id}`);
   expect(screen.getByLabelText("Адрес")).toHaveTextContent("max_price=3000");
+  expect(screen.getByLabelText("Адрес")).toHaveTextContent(
+    "available_on=2030-01-08",
+  );
+  expect(
+    await screen.findByRole("link", { name: "Профиль: Мастер теста" }),
+  ).toHaveAttribute("href", `/masters/${id}?date=2030-01-08`);
   expect(await screen.findByText("Пока без отзывов")).toBeInTheDocument();
 });
 

@@ -121,6 +121,13 @@ export function readFilters(params: URLSearchParams, masters: boolean) {
   const page = params.get("page") ?? "1";
   const min = params.get("min_price") ?? "";
   const max = params.get("max_price") ?? "";
+  const availableOn = params.get("available_on") ?? "";
+  const dateValid =
+    !availableOn ||
+    (/^\d{4}-\d{2}-\d{2}$/.test(availableOn) &&
+      Number.isFinite(Date.parse(`${availableOn}T00:00:00Z`)) &&
+      new Date(`${availableOn}T00:00:00Z`).toISOString().slice(0, 10) ===
+        availableOn);
   const priceValid = (value: string) =>
     !value || /^\d{1,10}(\.\d{1,2})?$/.test(value);
   const valid =
@@ -128,7 +135,8 @@ export function readFilters(params: URLSearchParams, masters: boolean) {
     (!category || isIdentifier(category)) &&
     /^[1-9]\d{0,5}$/.test(page) &&
     (!masters ||
-      (["name", "price_asc", "price_desc", "rating"].includes(sort) &&
+      (dateValid &&
+        ["name", "price_asc", "price_desc", "rating"].includes(sort) &&
         priceValid(min) &&
         priceValid(max) &&
         (!min || !max || Number(min) <= Number(max))));
@@ -139,6 +147,7 @@ export function readFilters(params: URLSearchParams, masters: boolean) {
     query.set("sort", sort);
     if (min) query.set("min_price", min);
     if (max) query.set("max_price", max);
+    if (availableOn) query.set("available_on", availableOn);
   }
   return {
     search,
@@ -147,6 +156,7 @@ export function readFilters(params: URLSearchParams, masters: boolean) {
     page: Number(page),
     min,
     max,
+    availableOn,
     valid,
     query: query.toString(),
   };
