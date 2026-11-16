@@ -117,6 +117,7 @@ function BookingForm({ master, offers }: { master: Master; offers: Offer[] }) {
             <button
               className="text-link"
               onClick={() => {
+                forgetBookingKey(user.id, pending.offerId, pending.startsAt);
                 clearPendingBooking(user.id, master.id);
                 setPending(null);
               }}

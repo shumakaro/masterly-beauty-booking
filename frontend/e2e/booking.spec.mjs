@@ -47,6 +47,10 @@ test("a lost booking response can be retried without duplicate creation; reload 
   await expect(
     page.getByText(/Ответ не получен. Запись могла сохраниться/),
   ).toBeVisible();
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Восстановить подтверждение", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Проверить и повторить", exact: true })
     .click();
