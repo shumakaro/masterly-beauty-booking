@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { screenshot } from "./helpers.mjs";
 import {
   api,
   registerClient,
@@ -36,7 +37,7 @@ test("a lost booking response can be retried without duplicate creation; reload 
       ),
     ).toBe(false);
     if ([375, 1440].includes(width))
-      await page.screenshot({
+      await screenshot(page, {
         path: testInfo.outputPath(`booking-confirm-${width}.png`),
         fullPage: true,
       });
@@ -69,7 +70,7 @@ test("a lost booking response can be retried without duplicate creation; reload 
   expect(items).toHaveLength(1);
   await page.reload();
   await expect(page.locator(".booking-status")).toHaveText("Подтверждена");
-  await page.screenshot({
+  await screenshot(page, {
     path: testInfo.outputPath("booking-created.png"),
     fullPage: true,
   });

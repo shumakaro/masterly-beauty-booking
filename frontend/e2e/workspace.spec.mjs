@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { screenshot } from "./helpers.mjs";
 import { randomUUID } from "node:crypto";
 import {
   api,
@@ -62,7 +63,7 @@ test("master completes a real visit; client creates, edits and deletes their rev
   await expect(
     page.getByRole("heading", { name: "Оценка 4 / 5" }),
   ).toBeVisible();
-  await page.screenshot({
+  await screenshot(page, {
     path: testInfo.outputPath("client-reviews.png"),
     fullPage: true,
   });
@@ -184,7 +185,7 @@ test("master manages offers, work intervals, special dates, profile and portfoli
       ),
     ).toBe(false);
     if ([375, 1440].includes(width))
-      await page.screenshot({
+      await screenshot(page, {
         path: testInfo.outputPath(`master-profile-${width}.png`),
         fullPage: true,
       });
@@ -333,7 +334,7 @@ test("administrator manages catalog, visibility, user status and reasoned cancel
       ),
     ).toBe(false);
     if ([375, 1440].includes(width))
-      await page.screenshot({
+      await screenshot(page, {
         path: testInfo.outputPath(`admin-users-${width}.png`),
         fullPage: true,
       });

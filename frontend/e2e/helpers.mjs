@@ -7,6 +7,13 @@ export const writeHeaders = {
   Origin: "http://127.0.0.1:5173",
   "X-CSRF-Protection": "1",
 };
+export async function screenshot(page, options) {
+  // Full-page capture must start at the top, otherwise Chromium can include
+  // fixed controls that are correctly hidden above the current viewport.
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.evaluate(() => document.fonts.ready);
+  return page.screenshot(options);
+}
 export function fixturePassword() {
   if (!process.env.BROWSER_TEST_PASSWORD)
     throw new Error(
