@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import "./catalog.css";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { FavoriteButton } from "../features/workspace/Favorites";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star, X } from "lucide-react";
 import { ApiError, describeError } from "../shared/api/client";
@@ -514,8 +515,8 @@ function AvailabilityPanel({
         {offer.name} · {offer.duration_minutes} мин · {money(offer.price)}
       </h3>
       <p>
-        Время мастера: {master.timezone}. Здесь можно проверить расписание;
-        оформление онлайн-записи пока недоступно.
+        Время мастера: {master.timezone}. Выберите удобную дату, затем перейдите
+        к оформлению записи.
       </p>
       <label>
         Дата посещения
@@ -527,6 +528,12 @@ function AvailabilityPanel({
           onChange={(event) => setDate(event.target.value)}
         />
       </label>
+      <Link
+        className="button button-dark"
+        to={`/book/${master.id}?offer=${offer.id}&date=${date}`}
+      >
+        Перейти к записи
+      </Link>
       {!valid ? (
         <p role="alert">Выберите дату от сегодня до {maximum}.</p>
       ) : (
@@ -594,6 +601,7 @@ function MasterDetails({ master }: { master: Master }) {
             {master.address || "Адрес пока не указан"}
           </p>
           <p className="profile-timezone">Часовой пояс: {master.timezone}</p>
+          <FavoriteButton masterId={master.id} />
         </div>
       </section>
       <section className="profile-section" aria-labelledby="offers-title">
@@ -614,6 +622,12 @@ function MasterDetails({ master }: { master: Master }) {
                     </div>
                     <div>
                       <strong>{money(offer.price)}</strong>
+                      <Link
+                        className="button button-dark"
+                        to={`/book/${master.id}?offer=${offer.id}`}
+                      >
+                        Записаться
+                      </Link>
                       <button
                         className="text-link"
                         aria-pressed={selected?.id === offer.id}

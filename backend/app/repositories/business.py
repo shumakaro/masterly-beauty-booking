@@ -357,6 +357,25 @@ class BusinessRepository:
             .first()
         )
 
+    def own_reviews(self, client_id, page, size):
+        stmt = (
+            select(
+                Review.id,
+                Review.booking_id,
+                Review.rating,
+                Review.text,
+                Review.created_at,
+                User.display_name.label("author_name"),
+            )
+            .select_from(Review)
+            .join(Booking, Booking.id == Review.booking_id)
+            .join(User, User.id == Booking.client_id)
+            .where(Booking.client_id == client_id)
+        )
+        return self.paginate(
+            stmt.order_by(Review.created_at.desc(), Review.id), page, size, mappings=True
+        )
+
     def admin_users(self, page, size):
         return self.paginate(select(User).order_by(User.created_at.desc(), User.id), page, size)
 

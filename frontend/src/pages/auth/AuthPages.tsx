@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/authState";
-import { homeForRole } from "../../features/auth/paths";
+import { afterLogin, homeForRole } from "../../features/auth/paths";
 import { loginSchema, registrationSchema } from "../../features/auth/schemas";
 import {
   ApiError,
@@ -122,7 +122,10 @@ export function LoginPage() {
       password: "",
     },
   });
-  if (auth.user) return <Navigate to={homeForRole(auth.user.role)} replace />;
+  if (auth.user)
+    return (
+      <Navigate to={afterLogin(auth.user.role, location.state?.from)} replace />
+    );
   return (
     <AuthLayout>
       <p className="auth-intro">Войдите, чтобы управлять своим профилем.</p>
@@ -137,15 +140,9 @@ export function LoginPage() {
           setError("");
           try {
             const user = await auth.login(values.email, values.password);
-            const from: unknown = location.state?.from;
-            navigate(
-              typeof from === "string" &&
-                from.startsWith("/") &&
-                !from.startsWith("//")
-                ? from
-                : homeForRole(user.role),
-              { replace: true },
-            );
+            navigate(afterLogin(user.role, location.state?.from), {
+              replace: true,
+            });
           } catch (problem) {
             setError(describeError(problem));
           }
@@ -187,7 +184,10 @@ export function LoginPage() {
         </button>
       </form>
       <p className="auth-switch">
-        Впервые здесь? <Link to="/register">Создать аккаунт</Link>
+        Впервые здесь?{" "}
+        <Link to="/register" state={{ from: location.state?.from }}>
+          Создать аккаунт
+        </Link>
       </p>
     </AuthLayout>
   );
@@ -195,6 +195,7 @@ export function LoginPage() {
 
 export function RegisterPage() {
   const auth = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const form = useForm<z.infer<typeof registrationSchema>>({
@@ -229,7 +230,11 @@ export function RegisterPage() {
             });
             navigate("/login", {
               replace: true,
-              state: { registered: true, email: values.email },
+              state: {
+                registered: true,
+                email: values.email,
+                from: location.state?.from,
+              },
             });
           } catch (problem) {
             setError(describeError(problem));

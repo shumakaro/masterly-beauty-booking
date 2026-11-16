@@ -343,11 +343,16 @@ def test_review_requires_own_completed_visit_and_updates_rating(world, monkeypat
     assert profile["rating"] == 4 and profile["review_count"] == 1
     assert api.request("GET", f"/masters/{world.master.id}/reviews").json()["total"] == 1
     review_id = review.json()["id"]
+    own = api.request("GET", "/reviews", params={"page_size": 1}).json()
+    assert own["total"] == 1 and own["items"][0]["booking_id"] == item["id"]
+    assert own["items"][0]["id"] == review_id
     world.as_actor("other_client")
+    assert api.request("GET", "/reviews").json()["total"] == 0
     assert api.request("PATCH", f"/reviews/{review_id}", json={"rating": 5}).status_code == 404
     world.as_actor("client")
     assert api.request("PATCH", f"/reviews/{review_id}", json={"rating": 5}).status_code == 200
     world.as_actor("admin")
+    assert api.request("GET", "/reviews").status_code == 403
     assert api.request("DELETE", f"/reviews/{review_id}").status_code == 204
     assert api.request("GET", f"/masters/{world.master.id}").json()["rating"] is None
 

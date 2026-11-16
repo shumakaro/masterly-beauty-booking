@@ -247,6 +247,9 @@ class CatalogService:
         self.public_master(master_id)
         return self.repo.reviews(master_id, page, size)
 
+    def own_reviews(self, actor, page, size):
+        return self.repo.own_reviews(actor.id, page, size)
+
     def admin_users(self, page, size):
         return self.repo.admin_users(page, size)
 

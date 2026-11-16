@@ -89,6 +89,27 @@ export function useCategories() {
   });
 }
 
+export function usePublicOptions<T>(path: string, enabled = true) {
+  return useQuery({
+    queryKey: ["catalog", "all", path],
+    enabled,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const items: T[] = [];
+      for (let page = 1; ; page += 1) {
+        const result = await requestJson<Page<T>>(
+          `${path}?page=${page}&page_size=50`,
+          { signal },
+        );
+        items.push(...result.items);
+        if (items.length >= result.total || result.items.length === 0)
+          return items;
+      }
+    },
+  });
+}
+
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function isIdentifier(value: string) {
   return uuid.test(value);

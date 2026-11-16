@@ -12,19 +12,17 @@ afterEach(() => {
 it("preserves HTTP status and sanitized error details", async () => {
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 403,
-        json: async () => ({
-          error: {
-            code: "FORBIDDEN",
-            message: "Недостаточно прав.",
-            fields: [],
-          },
-        }),
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({
+        error: {
+          code: "FORBIDDEN",
+          message: "Недостаточно прав.",
+          fields: [],
+        },
       }),
+    }),
   );
   const { requestJson } = await import("./client");
   await expect(requestJson("health")).rejects.toMatchObject({
@@ -96,4 +94,47 @@ it("stops after a failed refresh instead of looping", async () => {
   await loginSession("test@example.com", "TestPassword123");
   await expect(requestJson("users/me")).rejects.toMatchObject({ status: 401 });
   expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+it("keeps the booking idempotency key on the single retry after token refresh", async () => {
+  const keys: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, options: RequestInit) => {
+      if (url.endsWith("auth/token"))
+        return {
+          ok: true,
+          json: async () => ({
+            access_token: "old",
+            user: { id: "client", role: "CLIENT" },
+          }),
+        };
+      if (url.endsWith("auth/refresh"))
+        return {
+          ok: true,
+          json: async () => ({
+            access_token: "new",
+            user: { id: "client", role: "CLIENT" },
+          }),
+        };
+      const headers = options.headers as Record<string, string>;
+      keys.push(headers["Idempotency-Key"]);
+      const ok = headers.Authorization === "Bearer new";
+      return {
+        ok,
+        status: ok ? 201 : 401,
+        json: async () => ({ id: "booking" }),
+      };
+    }),
+  );
+  const { loginSession, requestJson } = await import("./client");
+  await loginSession("test@example.com", "TestPassword123");
+  expect(
+    await requestJson("bookings", {
+      method: "POST",
+      body: { master_service_id: "offer" },
+      idempotencyKey: "same-key",
+    }),
+  ).toEqual({ id: "booking" });
+  expect(keys).toEqual(["same-key", "same-key"]);
 });
