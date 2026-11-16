@@ -1,12 +1,11 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, Request, Response
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from app.api.dependencies import AdminUser, CurrentUser, Db, MasterUser
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.schemas.auth import Login, Registration, TokenRead, UserRead, UserUpdate
+from app.schemas.auth import MasterProfileRead as MasterRead
 from app.schemas.errors import ErrorResponse
 from app.services.auth import AuthService
 
@@ -127,16 +126,6 @@ def me(user: CurrentUser):
 )
 def update_me(data: UserUpdate, user: CurrentUser, db: Db):
     return AuthService(db).update_user(user, data.display_name)
-
-
-class MasterRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: UUID
-    bio: str
-    timezone: str
-    address: str
-    is_published: bool
-    is_demo: bool
 
 
 @router.get(

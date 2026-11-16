@@ -164,6 +164,7 @@ class Booking(Identity, Base):
     duration_snapshot: Mapped[int] = mapped_column(Integer)
     service_name_snapshot: Mapped[str] = mapped_column(String(150))
     currency: Mapped[str] = mapped_column(String(3), default="KZT")
+    timezone_snapshot: Mapped[str] = mapped_column(String(64), default="Asia/Qyzylorda")
     cancelled_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     cancellation_reason: Mapped[str | None] = mapped_column(String(500))
     idempotency_key: Mapped[UUID] = mapped_column()

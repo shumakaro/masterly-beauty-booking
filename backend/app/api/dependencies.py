@@ -41,3 +41,12 @@ def admin_user(user: CurrentUser) -> User:
 
 MasterUser = Annotated[User, Depends(master_user)]
 AdminUser = Annotated[User, Depends(admin_user)]
+
+
+def client_user(user: CurrentUser) -> User:
+    if user.role != "CLIENT":
+        raise AppError(403, "FORBIDDEN", "Доступ разрешен только клиенту.")
+    return user
+
+
+ClientUser = Annotated[User, Depends(client_user)]

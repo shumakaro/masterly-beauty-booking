@@ -73,3 +73,18 @@ class TokenRead(BaseModel):
 class AccessRead(BaseModel):
     role: str
     message: str
+
+
+class MasterProfileRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    bio: str
+    timezone: str
+    address: str
+    avatar_url: str | None
+    is_published: bool
+    is_demo: bool
+
+
+class AdminMasterRead(MasterProfileRead):
+    user_id: UUID

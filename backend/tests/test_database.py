@@ -12,10 +12,10 @@ from sqlalchemy.orm import Session
 from app.db.models import Booking, Favorite, MasterService, Schedule, ScheduleException, User
 
 
-def test_schema_has_twelve_tables_and_three_revisions(pg_engine):
+def test_schema_has_twelve_tables_and_current_revision(pg_engine):
     assert len(set(inspect(pg_engine).get_table_names()) - {"alembic_version"}) == 12
     with pg_engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "003"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "004"
 
 
 def test_overlap_is_rejected_by_postgresql(db, offer):
