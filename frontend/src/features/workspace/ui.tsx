@@ -1,12 +1,25 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, describeError } from "../../shared/api/client";
 import type { Page } from "../catalog/api";
+import { LoadingState } from "../../shared/ui/LoadingState";
 
-export function Feedback({ error }: { error: unknown }) {
+export function Feedback({
+  error,
+  focus = false,
+  id,
+}: {
+  error: unknown;
+  focus?: boolean;
+  id?: string;
+}) {
+  const target = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error && focus) target.current?.focus();
+  }, [error, focus]);
   return error ? (
-    <div className="form-error" role="alert">
+    <div className="form-error" role="alert" id={id} ref={target} tabIndex={-1}>
       <p>{describeError(error)}</p>
       {error instanceof ApiError && error.fields.length > 0 && (
         <ul>
@@ -28,11 +41,7 @@ export function DataPanel<T>({
   children: (data: T) => ReactNode;
 }) {
   if (query.isPending)
-    return (
-      <p role="status" className="workspace-state">
-        Загружаем…
-      </p>
-    );
+    return <LoadingState label="Загружаем…" className="workspace-state" />;
   if (query.isError)
     return (
       <div className="workspace-state">

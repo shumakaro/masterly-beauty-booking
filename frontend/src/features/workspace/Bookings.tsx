@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CircleCheck } from "lucide-react";
+import "./workspace.css";
 import {
   Link,
   useLocation,
@@ -62,6 +64,19 @@ export function BookingCard({
   const [action, setAction] = useState<"CANCELLED" | "COMPLETED" | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const write = useWrite<Booking>();
+  const cardHeading = useRef<HTMLHeadingElement>(null);
+  const actionTrigger = useRef<HTMLButtonElement | null>(null);
+  const actionPanel = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (action)
+      actionPanel.current
+        ?.querySelector<HTMLElement>("textarea, button")
+        ?.focus();
+  }, [action]);
+  const closeAction = () => {
+    setAction(null);
+    actionTrigger.current?.focus({ preventScroll: true });
+  };
   const [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
     const interval = window.setInterval(() => setClock(Date.now()), 30_000);
@@ -80,7 +95,9 @@ export function BookingCard({
         </p>
         <span className="workspace-hint">№ {booking.id.slice(0, 8)}</span>
       </div>
-      <h3>{booking.service_name}</h3>
+      <h3 ref={cardHeading} tabIndex={-1}>
+        {booking.service_name}
+      </h3>
       <dl className="detail-list">
         <div>
           <dt>Мастер</dt>
@@ -130,7 +147,8 @@ export function BookingCard({
         {canCancel && (
           <button
             className="text-link"
-            onClick={() => {
+            onClick={(event) => {
+              actionTrigger.current = event.currentTarget;
               write.reset();
               setAction("CANCELLED");
             }}
@@ -141,7 +159,8 @@ export function BookingCard({
         {canComplete && (
           <button
             className="text-link"
-            onClick={() => {
+            onClick={(event) => {
+              actionTrigger.current = event.currentTarget;
               write.reset();
               setAction("COMPLETED");
             }}
@@ -167,7 +186,11 @@ export function BookingCard({
       </div>
       {action && confirmed && (
         <form
+          ref={actionPanel}
           className="confirm-action workspace-form"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !write.isPending) closeAction();
+          }}
           onSubmit={async (event) => {
             event.preventDefault();
             const values = new FormData(event.currentTarget);
@@ -187,6 +210,9 @@ export function BookingCard({
                 },
               });
               setAction(null);
+              requestAnimationFrame(() =>
+                cardHeading.current?.focus({ preventScroll: true }),
+              );
             } catch {
               /* Feedback below. */
             }
@@ -209,7 +235,7 @@ export function BookingCard({
               />
             </label>
           )}
-          <Feedback error={write.error} />
+          <Feedback error={write.error} focus />
           <div className="workspace-actions">
             <button
               className="button button-outline"
@@ -221,12 +247,17 @@ export function BookingCard({
               className="text-link"
               type="button"
               disabled={write.isPending}
-              onClick={() => setAction(null)}
+              onClick={closeAction}
             >
               Оставить без изменений
             </button>
           </div>
         </form>
+      )}
+      {write.isSuccess && (
+        <p className="form-success" role="status">
+          Статус посещения обновлен.
+        </p>
       )}
       {reviewing && !reviewed && (
         <ResourceForm
@@ -366,6 +397,12 @@ export function BookingDetailsPage() {
                   ? "Запись подтверждена."
                   : "Детали посещения."}
               </h1>
+              {location.state?.created && booking.status === "CONFIRMED" && (
+                <p className="booking-success" role="status">
+                  <CircleCheck aria-hidden="true" />
+                  Посещение сохранено. Его детали и отмена доступны в кабинете.
+                </p>
+              )}
               <BookingCard
                 key={booking.id}
                 booking={booking}

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { usePrivateQuery, useWrite } from "./api";
 import { DataPanel, Feedback, Pager } from "./ui";
 import { pageNumber } from "./api";
 import type { Page } from "../catalog/api";
+import { ApiError } from "../../shared/api/client";
 
 export type Row = Record<string, unknown> & { id: string };
 export interface Field {
@@ -47,6 +48,7 @@ export function ResourceForm({
   initial,
   prepare,
   onSaved,
+  autoFocus = false,
 }: {
   path: string;
   method: "POST" | "PATCH";
@@ -54,11 +56,21 @@ export function ResourceForm({
   initial?: Row;
   prepare?: ResourceConfig["prepare"];
   onSaved?: () => void;
+  autoFocus?: boolean;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const errorId = useId();
+  useEffect(() => {
+    if (autoFocus)
+      formRef.current
+        ?.querySelector<HTMLElement>("input, select, textarea")
+        ?.focus();
+  }, [autoFocus]);
   const write = useWrite();
   const [saved, setSaved] = useState(false);
   return (
     <form
+      ref={formRef}
       className="workspace-form"
       onChange={() => {
         setSaved(false);
@@ -89,6 +101,16 @@ export function ResourceForm({
           setSaved(true);
           if (method === "POST") form.reset();
           onSaved?.();
+          if (!onSaved)
+            requestAnimationFrame(() =>
+              form
+                .querySelector<HTMLElement>(
+                  method === "POST"
+                    ? "input, select, textarea"
+                    : "button[type=submit], button:not([type])",
+                )
+                ?.focus({ preventScroll: true }),
+            );
         } catch {
           /* Server error is shown next to the form; values remain editable. */
         }
@@ -103,6 +125,15 @@ export function ResourceForm({
             required: field.required,
             maxLength: field.maxLength,
             disabled: write.isPending,
+            "aria-invalid":
+              (write.error instanceof ApiError &&
+                write.error.fields.some(
+                  (error) =>
+                    error.path === field.name ||
+                    error.path.endsWith(`.${field.name}`),
+                )) ||
+              undefined,
+            "aria-describedby": write.error ? errorId : undefined,
           };
           return (
             <label
@@ -152,7 +183,7 @@ export function ResourceForm({
             </label>
           );
         })}
-      <Feedback error={write.error} />
+      <Feedback error={write.error} focus id={errorId} />
       {saved && (
         <p className="form-success" role="status">
           Сохранено.
@@ -169,12 +200,33 @@ export function ResourceForm({
   );
 }
 
-function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
+function ResourceItem({
+  item,
+  config,
+  onRemoved,
+}: {
+  item: Row;
+  config: ResourceConfig;
+  onRemoved: (id: string) => void;
+}) {
+  const editButton = useRef<HTMLButtonElement>(null);
+  const removeButton = useRef<HTMLButtonElement>(null);
+  const confirmPanel = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const remove = useWrite();
+  useEffect(() => {
+    if (confirm)
+      confirmPanel.current?.querySelector<HTMLElement>("button")?.focus();
+  }, [confirm]);
+  const closeEditor = () => {
+    setEditing(false);
+    requestAnimationFrame(() =>
+      editButton.current?.focus({ preventScroll: true }),
+    );
+  };
   return (
-    <article className="resource-item">
+    <article className="resource-item" data-resource-id={item.id}>
       <h3>{config.summary(item)}</h3>
       {typeof item.url === "string" && (
         <img
@@ -186,11 +238,19 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
       {typeof item.text === "string" && <p>{item.text}</p>}
       {!editing && (
         <div className="workspace-actions">
-          <button className="text-link" onClick={() => setEditing(true)}>
+          <button
+            ref={editButton}
+            className="text-link"
+            onClick={() => setEditing(true)}
+          >
             Изменить
           </button>
           {config.remove && (
-            <button className="text-link" onClick={() => setConfirm(true)}>
+            <button
+              ref={removeButton}
+              className="text-link"
+              onClick={() => setConfirm(true)}
+            >
               {config.removeLabel ?? "Удалить"}
             </button>
           )}
@@ -204,9 +264,10 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
             fields={config.fields}
             initial={item}
             prepare={config.prepare}
-            onSaved={() => setEditing(false)}
+            onSaved={closeEditor}
+            autoFocus
           />
-          <button className="text-link" onClick={() => setEditing(false)}>
+          <button className="text-link" onClick={closeEditor}>
             Закрыть редактирование
           </button>
         </>
@@ -216,13 +277,20 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
           className="confirm-action"
           role="group"
           aria-label="Подтверждение удаления"
+          ref={confirmPanel}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !remove.isPending) {
+              setConfirm(false);
+              removeButton.current?.focus();
+            }
+          }}
         >
           <p>
             {config.removeLabel === "Отключить"
               ? "Отключить предложение? История посещений сохранится."
               : "Удалить этот объект?"}
           </p>
-          <Feedback error={remove.error} />
+          <Feedback error={remove.error} focus />
           <div className="workspace-actions">
             <button
               className="button button-outline"
@@ -234,6 +302,7 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
                     method: "DELETE",
                   });
                   setConfirm(false);
+                  onRemoved(item.id);
                 } catch {
                   /* Feedback above. */
                 }
@@ -244,7 +313,10 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
             <button
               className="text-link"
               disabled={remove.isPending}
-              onClick={() => setConfirm(false)}
+              onClick={() => {
+                setConfirm(false);
+                removeButton.current?.focus();
+              }}
             >
               Оставить
             </button>
@@ -255,13 +327,14 @@ function ResourceItem({ item, config }: { item: Row; config: ResourceConfig }) {
   );
 }
 export function ResourceManager({ config }: { config: ResourceConfig }) {
+  const section = useRef<HTMLElement>(null);
   const [params] = useSearchParams();
   const query = usePrivateQuery<Page<Row>>(
     `${config.read}?page=${pageNumber(params)}&page_size=10`,
   );
   return (
-    <section className="workspace-section">
-      <h2>{config.title}</h2>
+    <section className="workspace-section" ref={section}>
+      <h2 tabIndex={-1}>{config.title}</h2>
       {config.description && (
         <p className="workspace-hint">{config.description}</p>
       )}
@@ -284,7 +357,23 @@ export function ResourceManager({ config }: { config: ResourceConfig }) {
             )}
             <div className="resource-list">
               {data.items.map((item) => (
-                <ResourceItem item={item} config={config} key={item.id} />
+                <ResourceItem
+                  item={item}
+                  config={config}
+                  key={item.id}
+                  onRemoved={(id) => {
+                    requestAnimationFrame(() => {
+                      const target =
+                        section.current?.querySelector<HTMLElement>(
+                          `[data-resource-id="${id}"] button`,
+                        ) ??
+                        section.current?.querySelector<HTMLElement>(
+                          ".resource-item button, h2",
+                        );
+                      target?.focus({ preventScroll: true });
+                    });
+                  }}
+                />
               ))}
             </div>
             <Pager data={data} />
