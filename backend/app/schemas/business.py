@@ -368,6 +368,10 @@ class ReviewRead(ReadModel):
     created_at: datetime
 
 
+class OwnReviewRead(ReviewRead):
+    booking_id: UUID
+
+
 class AdminUserRead(ReadModel):
     id: UUID
     email: str

@@ -1,0 +1,374 @@
+.workspace-page {
+  min-height: 65vh;
+  padding-block: 45px 90px;
+}
+.workspace-page > .eyebrow {
+  margin-top: 35px;
+}
+.workspace-page > h1 {
+  margin-block: 22px 40px;
+  max-width: 950px;
+}
+.dashboard-workspace {
+  margin-block: 45px 65px;
+}
+.workspace-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-block: 1px solid var(--line);
+  padding-block: 18px;
+  margin-bottom: 40px;
+}
+.workspace-tabs a {
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+.workspace-tabs a[aria-current="page"] {
+  background: var(--ink);
+  color: var(--surface);
+}
+.workspace-section > h2,
+.workspace-section-heading h2,
+.booking-confirm h2 {
+  font-size: 2.8rem;
+  margin-bottom: 25px;
+}
+.workspace-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.workspace-hint {
+  font-size: 0.77rem;
+  color: var(--muted);
+  line-height: 1.9;
+  max-width: 800px;
+  margin-block: 15px;
+  overflow-wrap: anywhere;
+}
+.workspace-state {
+  color: var(--muted);
+  padding-block: 35px;
+  line-height: 1.9;
+}
+.workspace-state .button {
+  margin-top: 20px;
+}
+.workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-block: 20px 0;
+}
+.workspace-actions button.text-link,
+.workspace-section-heading button.text-link,
+.resource-item > button.text-link {
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  background: none;
+  padding: 8px 0;
+}
+.workspace-actions a {
+  line-height: 1.8;
+}
+.workspace-filter {
+  display: grid;
+  max-width: 300px;
+  gap: 12px;
+  margin-block: 20px;
+  font-size: 0.75rem;
+}
+.workspace-filter select,
+.workspace-form input:not([type="checkbox"]),
+.workspace-form select,
+.workspace-form textarea,
+.booking-form > label > select,
+.booking-form > label > input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 14px;
+  font: inherit;
+  border-radius: 0;
+}
+.workspace-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.workspace-form textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+.workspace-form {
+  display: grid;
+  gap: 22px;
+  margin-block: 25px;
+  max-width: 700px;
+}
+.workspace-form label,
+.booking-form > label {
+  display: grid;
+  gap: 12px;
+  font-size: 0.78rem;
+}
+.workspace-form label.workspace-checkbox {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.workspace-checkbox input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.workspace-form .button {
+  justify-self: start;
+}
+.resource-list {
+  display: grid;
+  gap: 20px;
+}
+.resource-item {
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-top: 20px;
+  min-width: 0;
+}
+.resource-item h3 {
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.resource-item > p {
+  font-size: 0.8rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 15px;
+}
+.resource-item > img {
+  width: 240px;
+  height: 200px;
+  margin-top: 15px;
+}
+.create-resource {
+  border: 1px solid var(--line);
+  background: var(--champagne);
+  padding: 22px;
+  margin-block: 25px;
+}
+.create-resource summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 5px;
+}
+.create-resource summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.confirm-action {
+  border-top: 1px solid var(--line);
+  margin-top: 25px;
+  padding-top: 25px;
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+.bookings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 25px;
+}
+.booking-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 30px;
+  margin-top: 20px;
+}
+.booking-card h3 {
+  font-size: 1.15rem;
+  margin-block: 25px;
+  overflow-wrap: anywhere;
+}
+.booking-card-top {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+}
+.booking-status {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  font-size: 0.7rem;
+}
+.status-confirmed {
+  color: #48604c;
+  border-color: #9eada0;
+  background: #f0f4ed;
+}
+.status-cancelled {
+  color: var(--muted);
+}
+.status-completed {
+  color: var(--accent);
+  background: var(--paper);
+}
+.detail-list {
+  font-size: 0.8rem;
+  margin-block: 25px;
+}
+.detail-list > div {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr);
+  padding-block: 14px;
+  border-bottom: 1px solid var(--line);
+  gap: 20px;
+  line-height: 1.8;
+}
+.detail-list dt {
+  color: var(--muted);
+}
+.detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.detail-list dd a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.booking-steps {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  gap: 25px;
+  border-block: 1px solid var(--line);
+  margin-block: 35px;
+  font-size: 0.75rem;
+}
+.booking-steps li {
+  padding-block: 20px;
+  color: var(--muted);
+}
+.booking-steps li[aria-current="step"] {
+  color: var(--ink);
+  border-bottom: 2px solid var(--accent);
+}
+.booking-form {
+  max-width: 800px;
+}
+.booking-form > label {
+  max-width: 600px;
+  margin-block: 25px;
+}
+.booking-form > button {
+  margin-top: 25px;
+}
+.slot-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 0;
+  padding: 20px 0;
+  margin: 0;
+}
+.slot-options legend {
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+.slot-options label {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.slot-options input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.slot-options span {
+  display: block;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 14px 18px;
+}
+.slot-options input:checked + span {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+.slot-options input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.booking-confirm {
+  max-width: 850px;
+}
+.workspace-page > .booking-card {
+  max-width: 850px;
+}
+.favorite-control {
+  margin-top: 25px;
+}
+.availability-panel > .button {
+  margin-top: 25px;
+}
+@media (max-width: 900px) {
+  .bookings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .workspace-page {
+    padding-block: 25px 60px;
+  }
+  .workspace-page > h1 {
+    font-size: 3.1rem;
+  }
+  .workspace-tabs {
+    gap: 5px;
+  }
+  .workspace-tabs a {
+    padding: 12px;
+    font-size: 0.7rem;
+  }
+  .booking-card,
+  .resource-item {
+    padding: 22px;
+  }
+  .booking-card-top {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .booking-card-top .workspace-hint {
+    margin: 0;
+  }
+  .detail-list > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .booking-steps {
+    gap: 15px;
+    font-size: 0.65rem;
+  }
+  .booking-steps li {
+    padding-block: 15px;
+  }
+  .workspace-section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .workspace-section-heading h2 {
+    margin-bottom: 0;
+  }
+}

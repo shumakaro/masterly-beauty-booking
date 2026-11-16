@@ -1,6 +1,7 @@
 import { AuthContext, type AuthStatus } from "./authState";
 import type { User } from "../../shared/api/client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   loginSession,
@@ -10,6 +11,8 @@ import {
 } from "../../shared/api/client";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const cache = useQueryClient();
+  const identity = useRef<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [attempt, setAttempt] = useState(0);
@@ -17,6 +20,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     const unsubscribe = subscribeSession((next) => {
       if (active) {
+        if (identity.current !== (next?.id ?? null)) {
+          void cache.cancelQueries({ queryKey: ["private"] });
+          cache.removeQueries({ queryKey: ["private"] });
+          identity.current = next?.id ?? null;
+        }
         setUser(next);
         setStatus(next ? "authenticated" : "guest");
       }
@@ -33,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe();
     };
-  }, [attempt]);
+  }, [attempt, cache]);
   return (
     <AuthContext.Provider
       value={{

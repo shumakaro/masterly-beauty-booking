@@ -5,13 +5,11 @@ import App from "./App";
 beforeEach(() => {
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 401,
-        json: async () => ({ error: { message: "Unauthorized" } }),
-      }),
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: "Unauthorized" } }),
+    }),
   );
   window.history.replaceState({}, "", "/");
   vi.stubGlobal("scrollTo", vi.fn());
@@ -26,19 +24,19 @@ it("lets visitors explore a direction without pretending to make a booking", () 
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: /Ногти/ }));
   expect(screen.getByText(/Лаконичный нюд/)).toBeInTheDocument();
-  expect(screen.getByText(/Онлайн-запись откроется/)).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /Найти своего мастера/ }),
+  ).toHaveAttribute("href", "/masters");
 });
 
 it("provides a real recovery route for an unknown URL", () => {
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 401,
-        json: async () => ({ error: { message: "Unauthorized" } }),
-      }),
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: "Unauthorized" } }),
+    }),
   );
   window.history.replaceState({}, "", "/unknown-page");
   render(<App />);

@@ -1,14 +1,16 @@
 """Explicit demonstration catalog for disposable browser-test databases only."""
 
 import os
-from datetime import time
+from datetime import UTC, datetime, time, timedelta
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password
 from app.db.models import (
+    Booking,
     Category,
     MasterProfile,
     MasterService,
@@ -25,6 +27,9 @@ def seed_browser():
     if parsed.get_backend_name() != "postgresql" or not (parsed.database or "").endswith("_test"):
         raise RuntimeError("Browser fixtures require a disposable PostgreSQL *_test database")
     engine = create_engine(url, hide_parameters=True)
+    password = os.environ.get("BROWSER_TEST_PASSWORD")
+    if not password or len(password) < 32:
+        raise RuntimeError("Generate an ephemeral BROWSER_TEST_PASSWORD for browser fixtures")
 
     def identifier(key):
         return uuid5(NAMESPACE_URL, f"masterly-browser-fixture:{key}")
@@ -70,6 +75,7 @@ def seed_browser():
             db.flush()
             db.add(
                 MasterService(
+                    id=identifier(f"offer-{key}"),
                     master_id=master.id,
                     service_id=identifier("service-nails" if index == 1 else "service-hair"),
                     price=1000 + index * 500,
@@ -95,8 +101,40 @@ def seed_browser():
                         position=0,
                     )
                 )
+        for role in ["CLIENT", "ADMIN"]:
+            if not db.get(User, identifier(role)):
+                db.add(
+                    User(
+                        id=identifier(role),
+                        email=f"browser-{role.lower()}@example.test",
+                        display_name=f"Демо {role}",
+                        password_hash=hash_password(password),
+                        role=role,
+                    )
+                )
+        db.get(User, identifier("user-0")).password_hash = hash_password(password)
+        db.flush()
+        past = datetime.now(UTC).replace(minute=0, second=0, microsecond=0) - timedelta(days=2)
+        if not db.get(Booking, identifier("past-booking")):
+            db.add(
+                Booking(
+                    id=identifier("past-booking"),
+                    client_id=identifier("CLIENT"),
+                    master_id=identifier("master-0"),
+                    master_service_id=identifier("offer-0"),
+                    starts_at=past,
+                    ends_at=past + timedelta(hours=1),
+                    price_snapshot=1000,
+                    duration_snapshot=60,
+                    service_name_snapshot="Прошедшее демо-посещение",
+                    status="CONFIRMED",
+                    idempotency_key=identifier("past-key"),
+                    request_hash="browser-fixture",
+                    timezone_snapshot="Asia/Qyzylorda",
+                )
+            )
     engine.dispose()
-    print("Browser-only demo catalog ready; fixture accounts have no usable passwords.")
+    print("Browser-only demo catalog ready with ephemeral test accounts.")
 
 
 if __name__ == "__main__":

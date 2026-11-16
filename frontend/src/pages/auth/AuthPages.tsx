@@ -187,7 +187,10 @@ export function LoginPage() {
         </button>
       </form>
       <p className="auth-switch">
-        Впервые здесь? <Link to="/register">Создать аккаунт</Link>
+        Впервые здесь?{" "}
+        <Link to="/register" state={{ from: location.state?.from }}>
+          Создать аккаунт
+        </Link>
       </p>
     </AuthLayout>
   );
@@ -195,6 +198,7 @@ export function LoginPage() {
 
 export function RegisterPage() {
   const auth = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const form = useForm<z.infer<typeof registrationSchema>>({
@@ -229,7 +233,11 @@ export function RegisterPage() {
             });
             navigate("/login", {
               replace: true,
-              state: { registered: true, email: values.email },
+              state: {
+                registered: true,
+                email: values.email,
+                from: location.state?.from,
+              },
             });
           } catch (problem) {
             setError(describeError(problem));

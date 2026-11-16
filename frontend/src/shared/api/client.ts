@@ -89,10 +89,13 @@ export interface RequestOptions {
   method?: string;
   body?: unknown;
   signal?: AbortSignal;
+  idempotencyKey?: string;
 }
 async function send(path: string, options: RequestOptions = {}) {
   if (!baseUrl) throw new Error("Адрес API не настроен. Попробуйте позже.");
   const headers: Record<string, string> = { Accept: "application/json" };
+  if (options.idempotencyKey)
+    headers["Idempotency-Key"] = options.idempotencyKey;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.method && options.method !== "GET")

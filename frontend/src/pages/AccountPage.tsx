@@ -7,6 +7,7 @@ import { useAuth } from "../features/auth/authState";
 import { homeForRole } from "../features/auth/paths";
 import { profileSchema } from "../features/auth/schemas";
 import { describeError, updateOwnProfile } from "../shared/api/client";
+import { Dashboard } from "../features/workspace/Dashboard";
 
 const labels = {
   CLIENT: "Кабинет клиента",
@@ -28,7 +29,7 @@ export function AccountPage() {
         <em>{user.display_name}.</em>
       </h1>
       <p className="section-intro">
-        Ваш аккаунт подключен. Здесь будут собраны ваши{" "}
+        Здесь собраны ваши{" "}
         {user.role === "MASTER"
           ? "услуги, расписание и записи клиентов"
           : user.role === "ADMIN"
@@ -56,10 +57,7 @@ export function AccountPage() {
           Изменить имя →
         </Link>
       </section>
-      <p className="development-note">
-        Каталог и онлайн-запись находятся в разработке. Существующие записи не
-        имитируются.
-      </p>
+      <Dashboard />
       {error && (
         <p className="form-error" role="alert">
           {error}

@@ -25,6 +25,7 @@ from app.schemas.business import (
     OfferCreate,
     OfferRead,
     OfferUpdate,
+    OwnReviewRead,
     Page,
     PortfolioCreate,
     PortfolioRead,
@@ -328,6 +329,11 @@ def add_favorite(identifier: UUID, actor: ClientUser, db: Db):
 def remove_favorite(identifier: UUID, actor: ClientUser, db: Db):
     CatalogService(db).remove_favorite(actor, identifier)
     return Response(status_code=204)
+
+
+@router.get("/reviews", response_model=Page[OwnReviewRead], tags=["Reviews"])
+def own_reviews(actor: ClientUser, db: Db, paging: Paging):
+    return CatalogService(db).own_reviews(actor, paging.page, paging.page_size)
 
 
 @router.post("/reviews", response_model=ReviewRead, status_code=201, tags=["Reviews"])

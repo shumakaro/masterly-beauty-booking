@@ -28,6 +28,8 @@ import { useEffect } from "react";
 import { Brand } from "./shared/ui/Brand";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MasterPage, MastersPage, ServicesPage } from "./pages/CatalogPages";
+import { BookingPage } from "./pages/BookingPage";
+import { BookingDetailsPage } from "./features/workspace/Bookings";
 
 const queryClient = new QueryClient();
 
@@ -332,8 +334,8 @@ function Home() {
         </section>
         <aside className="development-note shell">
           <span className="status-dot" />
-          MASTERLY в разработке. Онлайн-запись откроется после подключения
-          оформления записи.
+          MASTERLY в разработке. Каталог и онлайн-запись доступны после
+          подключения API.
         </aside>
       </main>
     </>
@@ -508,6 +510,22 @@ export default function App() {
             <Route path="/masters" element={<MastersPage />} />
             <Route path="/masters/:id" element={<MasterPage />} />
             <Route path="/services" element={<ServicesPage />} />
+            <Route
+              path="/book/:masterId"
+              element={
+                <ProtectedRoute roles={["CLIENT"]}>
+                  <BookingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bookings/:id"
+              element={
+                <ProtectedRoute>
+                  <BookingDetailsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route

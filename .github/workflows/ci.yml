@@ -43,6 +43,7 @@ jobs:
       DATABASE_URL: postgresql+psycopg://masterly:ci-only-ephemeral@localhost:5432/masterly_test
       DATABASE_URL_UNPOOLED: postgresql+psycopg://masterly:ci-only-ephemeral@localhost:5432/masterly_test
       COOKIE_SECURE: 'false'
+      AUTH_RATE_LIMIT: '100'
       CORS_ORIGINS: '["http://127.0.0.1:5173", "http://localhost:5173"]'
       VITE_API_BASE_URL: http://127.0.0.1:8000/api/v1
     defaults:
@@ -70,6 +71,9 @@ jobs:
           value=$(python -c 'import secrets; print(secrets.token_urlsafe(48))')
           echo "::add-mask::$value"
           echo "JWT_SECRET=$value" >> "$GITHUB_ENV"
+          browser_password=$(python -c 'import secrets; print(secrets.token_urlsafe(36))')
+          echo "::add-mask::$browser_password"
+          echo "BROWSER_TEST_PASSWORD=$browser_password" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
