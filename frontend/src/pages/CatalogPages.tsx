@@ -3,6 +3,7 @@ import "./catalog.css";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { FavoriteButton } from "../features/workspace/Favorites";
 import { LoadingState } from "../shared/ui/LoadingState";
+import { containDialogFocus } from "../shared/ui/dialogFocus";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, MapPin, Star, X } from "lucide-react";
 import { ApiError, describeError } from "../shared/api/client";
@@ -459,6 +460,7 @@ function PortfolioImage({ item }: { item: Portfolio }) {
       </figcaption>
       <dialog
         className="portfolio-dialog"
+        onKeyDown={containDialogFocus}
         ref={dialog}
         aria-label={item.alt_text}
       >

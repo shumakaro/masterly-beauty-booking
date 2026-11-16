@@ -6,6 +6,7 @@ import {
   fixturePassword,
   login,
   screenshot,
+  chooseTime,
 } from "./helpers.mjs";
 
 async function ready(page) {
@@ -238,6 +239,7 @@ for (const [role, email, path, tabs] of [
 ])
   test(`${role}: dark workspace forms and keyboard edit recovery`, async ({
     page,
+    request,
   }, testInfo) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, { email, password: fixturePassword() });
@@ -262,6 +264,33 @@ for (const [role, email, path, tabs] of [
       await expect(
         item.getByRole("spinbutton", { name: "Стоимость, ₸", exact: true }),
       ).toBeFocused();
+      await page.route("**/api/v1/master/services/*", async (route) => {
+        if (route.request().method() !== "PATCH") return route.continue();
+        await route.fulfill({
+          status: 422,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Проверьте стоимость.",
+              fields: [{ path: "price", message: "Некорректная стоимость." }],
+            },
+          }),
+        });
+      });
+      await item
+        .getByRole("button", { name: "Сохранить изменения", exact: true })
+        .click();
+      const error = item.getByRole("alert");
+      await expect(error).toBeFocused();
+      await expect(
+        item.getByRole("spinbutton", { name: "Стоимость, ₸", exact: true }),
+      ).toHaveAttribute("aria-invalid", "true");
+      await expect(
+        item.getByRole("spinbutton", { name: "Стоимость, ₸", exact: true }),
+      ).toHaveAttribute("aria-describedby", await error.getAttribute("id"));
+      await audit(page, testInfo, "server-field-error");
+      await page.unroute("**/api/v1/master/services/*");
       await item
         .getByRole("button", { name: "Закрыть редактирование" })
         .click();
@@ -276,6 +305,16 @@ for (const [role, email, path, tabs] of [
       ).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(disable).toBeFocused();
+    }
+    if (role === "CLIENT") {
+      const { master, offer } = await fixtureMaster(request);
+      await page.goto(`/book/${master.id}?offer=${offer.id}`);
+      await audit(page, testInfo, "booking-time");
+      await chooseTime(page, master, offer);
+      await expect(
+        page.getByRole("heading", { name: "Все верно?" }),
+      ).toBeFocused();
+      await audit(page, testInfo, "booking-confirm");
     }
     await screenshot(page, {
       path: testInfo.outputPath(`${role.toLowerCase()}-dark-workspace.png`),

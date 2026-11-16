@@ -104,6 +104,11 @@ textarea::placeholder {
 .field-error {
   color: var(--error);
 }
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--error);
+}
 .form-error {
   background: var(--error-bg);
 }
