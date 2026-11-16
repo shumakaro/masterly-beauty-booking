@@ -110,6 +110,9 @@ test("private overview uses real scoped data, refreshes after reload, and reflow
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  const slogan = await page.locator(".site-footer > p").boundingBox();
+  const copyright = await page.locator(".site-footer > span").boundingBox();
+  expect(slogan.y + slogan.height).toBeLessThanOrEqual(copyright.y);
   await screenshot(page, {
     path: testInfo.outputPath("overview-large-text.png"),
     fullPage: true,
