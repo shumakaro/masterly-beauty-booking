@@ -81,8 +81,12 @@ cd backend
 
 Подробные контракты и настройки: backend/AUTH.md. Нет ключа JWT и паролей по умолчанию. Создание ADMIN — только через python -m app.cli со скрытым вводом пароля. COOKIE_SECURE=false допускается только для localhost; production требует HTTPS и Secure cookie. Access хранится в памяти, refresh — HttpOnly cookie. Logout отзывает refresh, скопированный access может действовать до 15 минут.
 
-В CI: 64 backend-теста, 8 frontend-тестов и 3 Playwright-сценария авторизации. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, БД и frontend на адресах из playwright.config.mjs). Кабинеты пока показывают профиль; UI бизнес-функций добавляется на следующих этапах.
+Проверки: 64 backend-теста, 12 frontend-тестов и Playwright-сценарии авторизации и каталога. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителем scripts.seed_browser и frontend на адресах из playwright.config.mjs). Кабинеты пока показывают профиль; UI записи и управления посещениями добавляется на следующем этапе.
 
 ## Бизнес-API
 
 Контракты: backend/BUSINESS_API.md, живая схема /openapi.json и /docs. Применить alembic upgrade head (включая новую 004 timezone snapshot). POST /api/v1/bookings требует CLIENT и UUID Idempotency-Key. Свободное время берется из /masters/{id}/availability, значения цены/длительности сохраняются сервером. Тесты PostgreSQL проверяют записи двух клиентов, повторные запросы, конфликт графика, отмену, владение, DST, отзывы, избранное, SQL-пагинацию и отсутствие N+1.
+
+## Каталог
+
+Страницы /masters, /services и /masters/:id подключены к API. Поиск, фильтры и пагинация сохраняются в URL. В профиле доступны услуги, работы, отзывы и просмотр свободного времени с часовым поясом мастера. Полное описание и проверка: frontend/CATALOG.md. Оформление записи через интерфейс еще разрабатывается.

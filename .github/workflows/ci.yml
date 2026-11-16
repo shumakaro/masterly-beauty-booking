@@ -78,7 +78,9 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-      - name: Run real browser authentication against PostgreSQL
+      - name: Prepare disposable browser catalog
+        run: python -m scripts.seed_browser
+      - name: Run real browser authentication and catalog against PostgreSQL
         run: |
           python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > api-ci.log 2>&1 &
           api_pid=$!
