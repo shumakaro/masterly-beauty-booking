@@ -46,7 +46,7 @@ from app.services.appointments import AppointmentService
 from app.services.catalog import CatalogService
 
 router = APIRouter(
-    responses={status: {"model": ErrorResponse} for status in (401, 403, 404, 409, 422, 503)}
+    responses={status: {"model": ErrorResponse} for status in (400, 401, 403, 404, 409, 422, 503)}
 )
 
 

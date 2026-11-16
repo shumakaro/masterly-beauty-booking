@@ -586,3 +586,16 @@ def test_same_client_can_cancel_and_create_without_foreign_key_deadlock(world, p
             created, cancelled = list(pool.map(act, range(2)))
         assert (created.status_code, cancelled.status_code) == (201, 200)
         current = created.json()
+
+
+def test_malformed_json_returns_400_without_echoing_input(world):
+    api = world.as_actor("admin")
+    response = api.request(
+        "POST",
+        "/services",
+        content="{private-invalid-body",
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "JSON_INVALID"
+    assert "private-invalid-body" not in response.text

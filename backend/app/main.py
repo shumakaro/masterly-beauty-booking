@@ -96,6 +96,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
+        if any(item["type"] == "json_invalid" for item in exc.errors()):
+            return error_response(request, 400, "JSON_INVALID", "Некорректный JSON.")
         # Do not echo Pydantic input/ctx: they may contain a plaintext password.
         fields = [
             {

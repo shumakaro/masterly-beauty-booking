@@ -11,7 +11,8 @@ from app.services.auth import AuthService
 
 
 def errors(*statuses: int):
-    return {status: {"model": ErrorResponse} for status in statuses}
+    codes = set(statuses) | ({400} if 422 in statuses else set())
+    return {status: {"model": ErrorResponse} for status in codes}
 
 
 router = APIRouter(tags=["Authentication"])
