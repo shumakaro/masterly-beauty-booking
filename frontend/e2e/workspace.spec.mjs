@@ -163,7 +163,7 @@ test("master manages offers, work intervals, special dates, profile and portfoli
     .getByRole("link", { name: "Профиль мастера", exact: true })
     .click();
   await page
-    .getByLabel("О себе", { exact: true })
+    .getByRole("textbox", { name: "О себе", exact: true })
     .fill("Демонстрационный профиль, обновленный мастером.");
   await page.getByRole("checkbox", { name: "Профиль опубликован" }).uncheck();
   await page.getByRole("button", { name: "Сохранить изменения" }).click();

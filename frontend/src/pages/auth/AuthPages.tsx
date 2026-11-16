@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/authState";
-import { homeForRole } from "../../features/auth/paths";
+import { afterLogin, homeForRole } from "../../features/auth/paths";
 import { loginSchema, registrationSchema } from "../../features/auth/schemas";
 import {
   ApiError,
@@ -122,7 +122,10 @@ export function LoginPage() {
       password: "",
     },
   });
-  if (auth.user) return <Navigate to={homeForRole(auth.user.role)} replace />;
+  if (auth.user)
+    return (
+      <Navigate to={afterLogin(auth.user.role, location.state?.from)} replace />
+    );
   return (
     <AuthLayout>
       <p className="auth-intro">Войдите, чтобы управлять своим профилем.</p>
@@ -137,15 +140,9 @@ export function LoginPage() {
           setError("");
           try {
             const user = await auth.login(values.email, values.password);
-            const from: unknown = location.state?.from;
-            navigate(
-              typeof from === "string" &&
-                from.startsWith("/") &&
-                !from.startsWith("//")
-                ? from
-                : homeForRole(user.role),
-              { replace: true },
-            );
+            navigate(afterLogin(user.role, location.state?.from), {
+              replace: true,
+            });
           } catch (problem) {
             setError(describeError(problem));
           }

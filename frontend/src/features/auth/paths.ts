@@ -6,3 +6,14 @@ export function homeForRole(role: Role) {
       ? "/master/dashboard"
       : "/dashboard";
 }
+export function afterLogin(role: Role, from: unknown) {
+  if (
+    typeof from === "string" &&
+    from.startsWith("/") &&
+    !from.startsWith("//") &&
+    !from.includes("\\") &&
+    !/^\/(login|register)([?#]|$)/.test(from)
+  )
+    return from;
+  return homeForRole(role);
+}

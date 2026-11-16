@@ -1,6 +1,6 @@
 # Business API: catalog, schedule and booking
 
-Этап 7. Полный текущий контракт генерируется FastAPI: /openapi.json и /docs. Приложение содержит 60 операций HTTP, включая ранее реализованную авторизацию. UI каталога подключен на этапе 8 (frontend/CATALOG.md); UI оформления записи еще не реализован, production-деплоя нет.
+Полный текущий контракт генерируется FastAPI: /openapi.json и /docs. Приложение содержит 61 операцию HTTP, включая авторизацию и добавленный на этапе 9 GET /reviews. Каталог описан в frontend/CATALOG.md, запись и кабинеты — frontend/BOOKING.md. Production-деплоя нет.
 
 ## Публичные данные
 
@@ -36,12 +36,14 @@ GET /bookings - собственные CLIENT-записи; /master/bookings - �
 
 /favorites: GET; /favorites/{master_id}: PUT/DELETE, только CLIENT, идемпотентно. /reviews: POST после собственной COMPLETED-записи, один отзыв на запись; /reviews/{id}: PATCH своего CLIENT-отзыва, DELETE автора/ADMIN. Рейтинг вычисляется из данных, не задается в профиле вручную.
 
+GET /reviews возвращает Page[OwnReviewRead] только текущего CLIENT: поля публичного отзыва плюс booking_id для связи с собственным посещением. Владение отбирается SQL по bookings.client_id, чужие отзывы не возвращаются; MASTER/ADMIN получают 403. Публичные ответы отзывов не содержат booking_id.
+
 ADMIN: CRUD /categories и /services; /admin/categories и /admin/services показывают в том числе неактивные записи. Удаление используемой категории/услуги дает 409, вместо потери истории следует деактивация. /admin/users GET/PATCH is_active, /admin/masters GET/PATCH is_published. Назначения ADMIN через публичный API нет; блокировать ADMIN из UI нельзя, чтобы не потерять административный доступ.
 
 ## Миграции и проверки
 
 Ревизия 004 добавляет bookings.timezone_snapshot с backfill из существующих профилей; 001–003 не переписываются. Выполнить alembic upgrade head до запуска обновленного API. В тестовой БД проверяются downgrade/upgrade всех четырех границ.
 
-Интеграционные тесты требуют TEST_DATABASE_URL с суффиксом _test и очищают только эту одноразовую БД. Проверяются реальные HTTP-запросы, конкурентные подключения, идемпотентность, календарь/DST, права/IDOR, отзыв, избранное, CRUD, SQL pagination и число запросов каталога. Результат CI и планы предыдущих индексов сохраняются в database-verification. Браузерный сценарий записи будет добавлен вместе с UI этапа 9; текущий Playwright проверяет авторизацию.
+Интеграционные тесты требуют TEST_DATABASE_URL с суффиксом _test и очищают только эту одноразовую БД. Проверяются реальные HTTP-запросы, конкурентные подключения, идемпотентность, календарь/DST, права/IDOR, отзыв, избранное, CRUD, SQL pagination и число запросов каталога. Результат CI и планы предыдущих индексов сохраняются в database-verification. Playwright проверяет авторизацию, каталог, запись/конфликт/повтор/отмену и кабинеты на настоящей БД.
 
-Проверка CI a35fe22: 64 backend-теста (0 failures/errors/skipped), 8 frontend-тестов и 3 браузерных сценария авторизации. Новая UI-запись пока не реализована. Источник: https://github.com/shumakaro/masterly-beauty-booking/actions/runs/43783682584 .
+Историческая проверка бизнес-API a35fe22: 64 backend-теста (0 failures/errors/skipped). Источник: https://github.com/shumakaro/masterly-beauty-booking/actions/runs/43783682584 . Текущий набор содержит также 16 frontend-тестов и 12 браузерных сценариев; результаты актуальной ветки доступны в GitHub Actions.
