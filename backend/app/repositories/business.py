@@ -373,3 +373,14 @@ class BusinessRepository:
         self.db.execute(
             delete(Favorite).where(Favorite.client_id == client_id, Favorite.master_id == master_id)
         )
+
+    def add_favorite(self, client_id, master_id):
+        from sqlalchemy.dialects.postgresql import insert
+
+        from app.db.models import Favorite
+
+        self.db.execute(
+            insert(Favorite)
+            .values(client_id=client_id, master_id=master_id)
+            .on_conflict_do_nothing()
+        )

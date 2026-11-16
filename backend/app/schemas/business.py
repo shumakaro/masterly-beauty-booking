@@ -33,9 +33,6 @@ class Patch(StrictSchema):
         return self
 
 
-Name = str
-
-
 class CategoryCreate(StrictSchema):
     slug: str = Field(min_length=1, max_length=60, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     name: str = Field(min_length=1, max_length=100)
@@ -106,7 +103,7 @@ def image_url(value):
         return value
     parsed = urlsplit(value)
     if not (
-        (parsed.scheme in {"http", "https"} and parsed.hostname and not parsed.username)
+        (parsed.scheme in {"http", "https"} and parsed.hostname and parsed.username is None)
         or (value.startswith("/images/") and not parsed.scheme and not parsed.netloc)
     ):
         raise ValueError("Используйте HTTP(S) URL изображения")
@@ -198,7 +195,7 @@ class ScheduleCreate(StrictSchema):
     def interval(self):
         if self.starts_local >= self.ends_local:
             raise ValueError(
-                "Начало должно быть раньше окончания; ночные интервалы разделите по дням"
+                "Начало должно быть раньше окончания; ночные интервалы пока не поддерживаются"
             )
         return self
 
@@ -296,6 +293,15 @@ class BookingCreate(StrictSchema):
 class BookingUpdate(StrictSchema):
     status: Literal["CANCELLED", "COMPLETED"]
     cancellation_reason: str | None = Field(default=None, min_length=1, max_length=500)
+
+    @field_validator("cancellation_reason")
+    @classmethod
+    def clean_reason(cls, value):
+        if value is not None:
+            if not value.strip():
+                raise ValueError("Укажите причину отмены")
+            return value.strip()
+        return value
 
 
 class BookingRead(ReadModel):

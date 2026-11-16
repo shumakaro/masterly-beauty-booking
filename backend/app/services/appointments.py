@@ -212,9 +212,11 @@ class AppointmentService:
     def update_booking(self, actor, identifier, data):
         initial = self.owned_booking(actor, identifier)
         with change(self.db):
-            found(self.repo.master(initial.master_id, lock=True))
+            master = found(self.repo.master(initial.master_id, lock=True))
             item = self.owned_booking(actor, identifier)  # Re-read after acquiring lock.
-            if data.status == "COMPLETED" and actor.role not in {"MASTER", "ADMIN"}:
+            if data.status == "COMPLETED" and not (
+                actor.role == "ADMIN" or (actor.role == "MASTER" and master.user_id == actor.id)
+            ):
                 raise AppError(403, "FORBIDDEN", "Посещение завершает мастер.")
             if item.status == data.status:
                 return self.repo.booking_read(identifier)

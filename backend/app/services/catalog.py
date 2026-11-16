@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
@@ -159,11 +158,7 @@ class CatalogService:
     def add_favorite(self, actor, master_id):
         self.public_master(master_id)
         with change(self.db):
-            self.db.execute(
-                insert(Favorite)
-                .values(client_id=actor.id, master_id=master_id)
-                .on_conflict_do_nothing()
-            )
+            self.repo.add_favorite(actor.id, master_id)
 
     def remove_favorite(self, actor, master_id):
         with change(self.db):

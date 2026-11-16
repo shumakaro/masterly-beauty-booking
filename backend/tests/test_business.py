@@ -461,9 +461,47 @@ def test_timezone_can_map_local_date_to_previous_utc_day(world):
     assert start.astimezone(ZoneInfo("Pacific/Kiritimati")).date() == date(2030, 1, 8)
 
 
-def test_api_concurrent_requests_create_exactly_one_booking(world, pg_engine):
+@pytest.mark.parametrize("mode", ["different_keys", "different_clients", "same_key"])
+def test_api_concurrent_requests_create_exactly_one_booking(world, pg_engine, mode):
     chosen = world.slots().json()["slots"][0]["starts_at"]
-    token = access_token(world.actors["client"].id, "CLIENT")
+    app = create_app()
+
+    def independent_db():
+        with Session(pg_engine, expire_on_commit=False) as session:
+            yield session
+
+    app.dependency_overrides[get_db] = independent_db
+    barrier = Barrier(2)
+    key = uuid4()
+
+    def create(index):
+        client = AuthAPI(app)
+        actor = (
+            world.actors["other_client"]
+            if mode == "different_clients" and index
+            else world.actors["client"]
+        )
+        client.token = access_token(actor.id, "CLIENT")
+        barrier.wait(timeout=10)
+        response = client.request(
+            "POST",
+            "/bookings",
+            headers={"Idempotency-Key": str(key if mode == "same_key" else uuid4())},
+            json={"master_service_id": str(world.offer.id), "starts_at": chosen},
+        )
+        return response.status_code, response.json()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(create, range(2)))
+    assert sorted(status for status, _ in results) == (
+        [200, 201] if mode == "same_key" else [201, 409]
+    )
+    if mode == "same_key":
+        assert results[0][1]["id"] == results[1][1]["id"]
+
+
+def test_schedule_write_and_booking_are_serialized(world, pg_engine):
+    chosen = world.slots().json()["slots"][0]["starts_at"]
     app = create_app()
 
     def independent_db():
@@ -473,21 +511,25 @@ def test_api_concurrent_requests_create_exactly_one_booking(world, pg_engine):
     app.dependency_overrides[get_db] = independent_db
     barrier = Barrier(2)
 
-    def create():
+    def act(index):
         client = AuthAPI(app)
-        client.token = token
+        actor = world.actors["client" if index == 0 else "master"]
+        client.token = access_token(actor.id, actor.role)
         barrier.wait(timeout=10)
-        response = client.request(
-            "POST",
-            "/bookings",
-            headers={"Idempotency-Key": str(uuid4())},
-            json={"master_service_id": str(world.offer.id), "starts_at": chosen},
-        )
-        return response.status_code
+        if index == 0:
+            return client.request(
+                "POST",
+                "/bookings",
+                headers={"Idempotency-Key": str(uuid4())},
+                json={"master_service_id": str(world.offer.id), "starts_at": chosen},
+            ).status_code
+        return client.request(
+            "POST", "/master/schedule-exceptions", json={"local_date": world.day, "is_closed": True}
+        ).status_code
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        statuses = list(pool.map(lambda _: create(), range(2)))
-    assert sorted(statuses) == [201, 409]
+        outcomes = list(pool.map(act, range(2)))
+    assert sorted(outcomes) == [201, 409]
 
 
 def test_admin_cancellation_requires_reason_and_preserves_status_rules(world):
