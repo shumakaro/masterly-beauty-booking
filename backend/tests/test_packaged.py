@@ -39,7 +39,18 @@ def test_spa_direct_links_keep_csp_and_avoid_stale_html(packaged, path):
     assert response.headers["x-frame-options"] == "DENY"
 
 
-@pytest.mark.parametrize("path", ["/api/v1/unknown", "/api/unknown", "/assets/missing.js"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/unknown",
+        "/api/unknown",
+        "/api",
+        "/api%5cv1%5cunknown",
+        "/assets/missing.js",
+        "/assets/missing",
+        "/images/missing",
+    ],
+)
 def test_unknown_api_and_assets_never_return_spa_html(packaged, path):
     response = request(packaged, path)
     assert response.status_code == 404

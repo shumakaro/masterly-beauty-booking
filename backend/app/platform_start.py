@@ -6,6 +6,21 @@ import subprocess
 import sys
 
 
+def run_migrations():
+    """Блокировка или зависшее соединение не должны бесконечно задерживать запуск."""
+    migration_env = os.environ.copy()
+    previous = migration_env.get("PGOPTIONS", "")
+    migration_env["PGOPTIONS"] = (
+        f"{previous} -c lock_timeout=5000 -c statement_timeout=120000"
+    ).strip()
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        check=True,
+        env=migration_env,
+        timeout=180,
+    )
+
+
 def configure_environment():
     for name in ("DATABASE_URL", "DATABASE_URL_UNPOOLED"):
         url = os.environ.get(name, "")
@@ -28,7 +43,15 @@ def main():
     signing_key()  # Refuse to advertise a ready service with missing/weak auth settings.
     if not config.database_url or not config.database_url_unpooled:
         raise RuntimeError("Set both private database URLs before starting the service")
-    subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
+    run_migrations()
+    from sqlalchemy.orm import Session
+
+    from app.db.compatibility import schema_revision
+    from app.db.session import get_engine
+
+    # Проверяем также подключение приложения, а не только отдельный URL миграций.
+    with Session(get_engine()) as db:
+        schema_revision(db)
     os.execvp(
         sys.executable,
         [
