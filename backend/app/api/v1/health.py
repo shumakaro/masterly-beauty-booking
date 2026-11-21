@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.compatibility import SUPPORTED_REVISIONS, schema_revision
 from app.db.session import get_db
+from app.schemas.errors import ErrorResponse
 
 router = APIRouter(tags=["Operations"])
 
@@ -34,6 +35,7 @@ def health() -> HealthResponse:
     "/ready",
     response_model=ReadyResponse,
     summary="API database readiness",
+    responses={503: {"model": ErrorResponse, "description": "DB unavailable or incompatible"}},
     description="Checks DB connectivity, the supported Alembic revision and required columns. "
     "An incompatible or incomplete schema returns 503. No credentials returned.",
 )

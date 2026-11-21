@@ -80,7 +80,7 @@ cd backend
 
 Подробные контракты и настройки: backend/AUTH.md. Нет ключа JWT и паролей по умолчанию. Создание ADMIN — только через python -m app.cli со скрытым вводом пароля. COOKIE_SECURE=false допускается только для localhost; production требует HTTPS и Secure cookie. Access хранится в памяти, refresh — HttpOnly cookie. Logout отзывает refresh, скопированный access может действовать до 15 минут.
 
-В наборе проверок: 104 backend-теста, 19 frontend-тестов и 25 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
+В наборе проверок: 104 backend-теста, 19 frontend-тестов и 26 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
 
 ## Бизнес-API
 
