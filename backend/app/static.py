@@ -19,17 +19,24 @@ class SPAFiles(StaticFiles):
             raise RuntimeError("The packaged frontend index.html is missing")
 
     async def get_response(self, path, scope):
-        # API failures and missing assets must remain genuine 404 responses.
-        api = path == "api" or path.startswith("api/")
+        # Starlette использует разделитель ОС; защита API должна работать и на Windows.
+        normalized = path.replace("\\", "/").lstrip("/")
+        api = normalized == "api" or normalized.startswith("api/")
         if api:
             raise HTTPException(404)
         try:
             response = await super().get_response(path, scope)
         except HTTPException as error:
-            if error.status_code != 404 or path.startswith("assets/") or Path(path).suffix:
+            if (
+                error.status_code != 404
+                or normalized.startswith(("assets/", "images/", "brand/"))
+                or Path(path).suffix
+            ):
                 raise
             response = await super().get_response("index.html", scope)
         response.headers["Cache-Control"] = (
-            "public, max-age=31536000, immutable" if path.startswith("assets/") else "no-cache"
+            "public, max-age=31536000, immutable"
+            if normalized.startswith("assets/")
+            else "no-cache"
         )
         return response

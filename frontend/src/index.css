@@ -960,7 +960,7 @@ svg {
 /* Account flows follow the same editorial tokens as the public pages. */
 .auth-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 80px;
   padding-block: 60px 90px;
   align-items: start;
@@ -997,12 +997,14 @@ svg {
 }
 .auth-panel {
   max-width: 450px;
+  min-width: 0;
   padding-top: 28px;
   width: 100%;
 }
 .auth-panel h1 {
   font-size: 4rem;
   margin-top: 24px;
+  overflow-wrap: anywhere;
 }
 .auth-intro {
   font-size: 0.8rem;
@@ -1202,7 +1204,7 @@ svg {
 }
 @media (max-width: 760px) {
   .auth-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding-top: 25px;
     gap: 20px;
   }
@@ -1214,7 +1216,7 @@ svg {
     max-width: none;
   }
   .auth-panel h1 {
-    font-size: 3.3rem;
+    font-size: clamp(2.5rem, 10vw, 3.3rem);
   }
   .auth-panel .eyebrow {
     font-size: 0.58rem;
