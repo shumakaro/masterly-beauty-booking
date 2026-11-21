@@ -33,8 +33,6 @@ npm run dev
 
 Frontend: http://localhost:5173. API: http://localhost:8000/api/v1/health. OpenAPI: http://localhost:8000/docs. Эти адреса только для локальной разработки; API URL задается через .env. После изменения VITE-переменных перезапустить Vite.
 
-## Проверки
-
 ## Docker Compose
 
 На чистой машине с Docker и Python безопасное создание локальных настроек:
@@ -102,7 +100,7 @@ cd backend
 
 Подробные контракты и настройки: backend/AUTH.md. Нет ключа JWT и паролей по умолчанию. Создание ADMIN — только через python -m app.cli со скрытым вводом пароля. COOKIE_SECURE=false допускается только для localhost; production требует HTTPS и Secure cookie. Access хранится в памяти, refresh — HttpOnly cookie. Logout отзывает refresh, скопированный access может действовать до 15 минут.
 
-В наборе проверок: 104 backend-теста, 19 frontend-тестов и 26 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
+В наборе проверок: 109 backend-тестов, 19 frontend-тестов и 26 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
 
 ## Бизнес-API
 
