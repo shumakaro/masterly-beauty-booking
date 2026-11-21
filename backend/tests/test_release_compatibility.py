@@ -12,7 +12,7 @@ from sqlalchemy import select, text
 from alembic import command
 from app.db.compatibility import SUPPORTED_REVISIONS
 from app.db.models import MasterProfile
-from app.platform_start import run_migrations
+from app.platform_start import main, run_migrations
 
 
 @pytest.mark.parametrize("revision", ["004", "005"])
@@ -105,3 +105,11 @@ def test_migration_timeouts_are_local_to_migration_subprocess(monkeypatch):
     assert "lock_timeout=5000" in kwargs["env"]["PGOPTIONS"]
     assert "statement_timeout=120000" in kwargs["env"]["PGOPTIONS"]
     assert os.environ["PGOPTIONS"] == "-c application_name=masterly"
+
+
+def test_render_preview_refuses_start_before_any_migration(monkeypatch):
+    monkeypatch.setenv("IS_PULL_REQUEST", "true")
+    with patch("app.platform_start.run_migrations") as migrate:
+        with pytest.raises(RuntimeError, match="PR previews are disabled"):
+            main()
+    migrate.assert_not_called()

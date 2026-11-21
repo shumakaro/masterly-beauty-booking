@@ -51,6 +51,12 @@ Showcase seed предназначен только для изолирован�
 
 Локальная проверка не подтверждает фактическую конфигурацию облака.
 
+Автоматические Render PR Preview останавливаются до миграций при
+IS_PULL_REQUEST=true. Они могут наследовать URL рабочей БД; безопасная
+preview-конфигурация требует отдельной изолированной базы и отдельного решения.
+GitHub Actions использует собственный одноразовый PostgreSQL и не зависит от
+Render Preview. Эта защита не меняет настройки production-сервиса.
+
 Источники: https://render.com/docs/deploys ,
 https://render.com/docs/free ,
 https://render.com/docs/rollbacks ,

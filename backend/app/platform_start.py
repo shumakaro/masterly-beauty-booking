@@ -22,6 +22,9 @@ def run_migrations():
 
 
 def configure_environment():
+    # Preview может унаследовать рабочий URL Neon. До отдельной настройки не трогаем БД.
+    if os.environ.get("IS_PULL_REQUEST", "").strip().lower() == "true":
+        raise RuntimeError("PR previews are disabled before isolated database configuration")
     for name in ("DATABASE_URL", "DATABASE_URL_UNPOOLED"):
         url = os.environ.get(name, "")
         for prefix in ("postgres://", "postgresql://"):
