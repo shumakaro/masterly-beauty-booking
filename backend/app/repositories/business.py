@@ -90,6 +90,7 @@ class BusinessRepository:
         if available_offer_ids is not None:
             offers = offers.where(self.uuid_in(MasterService.id, available_offer_ids))
         offers = offers.group_by(MasterService.master_id).subquery()
+        # Считаем рейтинг одним агрегатным запросом, без загрузки отзывов для каждой карточки.
         ratings = (
             select(
                 Booking.master_id,
@@ -107,6 +108,8 @@ class BusinessRepository:
                 MasterProfile.id,
                 User.display_name,
                 MasterProfile.bio,
+                MasterProfile.specialization,
+                MasterProfile.experience_years,
                 MasterProfile.timezone,
                 MasterProfile.address,
                 MasterProfile.avatar_url,
@@ -137,6 +140,7 @@ class BusinessRepository:
                 or_(
                     User.display_name.ilike(pattern, escape="\\"),
                     MasterProfile.bio.ilike(pattern, escape="\\"),
+                    MasterProfile.specialization.ilike(pattern, escape="\\"),
                 )
             )
         return stmt
@@ -438,6 +442,8 @@ class BusinessRepository:
                 Review.id,
                 Review.rating,
                 Review.text,
+                Review.photo_url,
+                Review.is_demo,
                 Review.created_at,
                 User.display_name.label("author_name"),
             )
@@ -457,6 +463,8 @@ class BusinessRepository:
                     Review.id,
                     Review.rating,
                     Review.text,
+                    Review.photo_url,
+                    Review.is_demo,
                     Review.created_at,
                     User.display_name.label("author_name"),
                 )
@@ -476,6 +484,8 @@ class BusinessRepository:
                 Review.booking_id,
                 Review.rating,
                 Review.text,
+                Review.photo_url,
+                Review.is_demo,
                 Review.created_at,
                 User.display_name.label("author_name"),
             )

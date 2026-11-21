@@ -58,6 +58,20 @@ export function BusinessProfile() {
             initial={profile}
             fields={[
               {
+                name: "specialization",
+                label: "Специализация",
+                maxLength: 160,
+              },
+              {
+                name: "experience_years",
+                label: "Опыт работы в годах",
+                type: "number",
+                min: 0,
+                max: 80,
+                step: 1,
+                default: 0,
+              },
+              {
                 name: "bio",
                 label: "О себе",
                 type: "textarea",
@@ -90,6 +104,10 @@ export function BusinessProfile() {
 
 export function MasterManagement({ tab }: { tab: string }) {
   const services = usePublicOptions<Service>("services", tab === "offers");
+  const categories = usePublicOptions<Category>(
+    "categories",
+    tab === "portfolio",
+  );
   if (tab === "business-profile") return <BusinessProfile />;
   let config: ResourceConfig;
   if (tab === "offers") {
@@ -211,6 +229,23 @@ export function MasterManagement({ tab }: { tab: string }) {
       summary: (row) =>
         `${row.alt_text} · ${row.license} · Позиция ${row.position}`,
       fields: [
+        { name: "title", label: "Название работы", maxLength: 150 },
+        {
+          name: "description",
+          label: "Описание работы",
+          type: "textarea",
+          maxLength: 1500,
+        },
+        {
+          name: "category_id",
+          label: "Направление работы",
+          type: "select",
+          options:
+            categories.data?.map((item) => ({
+              value: item.id,
+              label: item.name,
+            })) ?? [],
+        },
         {
           name: "url",
           label: "Ссылка на изображение",
@@ -251,6 +286,7 @@ export function MasterManagement({ tab }: { tab: string }) {
       ],
       prepare: (values) => ({
         ...values,
+        category_id: values.category_id || null,
         ...(Object.hasOwn(values, "source_url")
           ? { source_url: values.source_url || null }
           : {}),

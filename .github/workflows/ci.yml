@@ -98,7 +98,9 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium firefox webkit
       - name: Prepare disposable browser catalog
-        run: python -m scripts.seed_browser
+        run: |
+          python -m scripts.seed_browser
+          python -m app.db.showcase
       - name: Run real browser authentication and catalog against PostgreSQL
         run: |
           python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > api-ci.log 2>&1 &

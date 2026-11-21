@@ -1,12 +1,18 @@
 # Business API: catalog, schedule and booking
 
-Полный текущий контракт генерируется FastAPI: /openapi.json и /docs. Приложение содержит 61 операцию HTTP, включая авторизацию и добавленный на этапе 9 GET /reviews. Каталог описан в frontend/CATALOG.md, запись и кабинеты — frontend/BOOKING.md. Production-деплоя нет.
+Полный текущий контракт генерируется FastAPI: /openapi.json и /docs. Приложение содержит 63 операции HTTP, включая авторизацию, собственные отзывы, GET /overview и проверку готовности GET /api/v1/ready. Каталог описан в frontend/CATALOG.md, запись и кабинеты — frontend/BOOKING.md. Production-деплоя нет. При контейнерном запуске публичная схема доступна через Nginx по /openapi.json; интерактивный /docs не проксируется. /api/v1/health проверяет только процесс, /api/v1/ready проверяет соединение с БД и наличие Alembic metadata.
 
 ## Публичные данные
 
 GET /api/v1/categories, /services, /masters возвращают {items,total,page,page_size}; page>=1, page_size<=50. Каталог мастеров поддерживает search, category_id, min_price, max_price, sort=name|price_asc|price_desc|rating. Фильтры, сортировка и пагинация выполняются SQL. Цена отбирается по подходящим активным предложениям, скрытые профили и отключенные пользователи не показываются. При отсутствии отзывов rating=null и review_count=0, без фиктивных оценок.
 
-GET /masters/{id}, /masters/{id}/services, /portfolio, /reviews - профиль и его ресурсы. GET /masters/{id}/availability?master_service_id=UUID&date=YYYY-MM-DD - реальные слоты на выбранную дату в IANA timezone мастера. Дата в каталоге мастеров пока не является фильтром доступности: для проверки времени используется отдельный availability endpoint.
+GET /masters/{id}, /masters/{id}/services, /portfolio, /reviews - профиль и его ресурсы. GET /masters/{id}/availability?master_service_id=UUID&date=YYYY-MM-DD - реальные слоты на выбранную дату в IANA timezone мастера.
+
+GET /masters?available_on=YYYY-MM-DD оставляет мастеров с хотя бы одним свободным предложением, удовлетворяющим также категории и цене. Дата интерпретируется отдельно в часовом поясе каждого мастера, от сегодня до 90 дней вперед. Используется тот же календарь, что при записи: длительность, перерывы, исключения, DST и занятые интервалы. Цена price_from относится только к подходящим свободным предложениям. Отбор выполняется до SQL count/пагинации, поэтому страницы и total учитывают все результаты. До 6 SELECT независимо от количества мастеров: кандидаты, три пакетных календарных запроса, count и страница. Это не нагрузочный тест неограниченного каталога; публичный rate limit настраивается при развертывании. Результат поиска не резервирует слот: POST bookings повторно проверяет доступность в транзакции.
+
+## Обзор кабинета
+
+GET /overview доступен CLIENT и MASTER: total, confirmed, upcoming (CONFIRMED и starts_at позже текущего времени), completed, cancelled, completed_value, currency=KZT. Данные ограничены владельцем на сервере; суммы рассчитаны по price_snapshot завершенных посещений. Это стоимость оказанных услуг, не подтвержденная выручка: платежей на платформе нет. ADMIN использует существующий /admin/overview (users, masters, bookings). Все ответы /api/v1 и ошибки содержат Cache-Control: no-store.
 
 ## Работа мастера
 
@@ -33,6 +39,8 @@ UUID/дата выше - только иллюстрация. Для рабоч�
 GET /bookings - собственные CLIENT-записи; /master/bookings - записи к текущему MASTER; /admin/bookings - ADMIN. GET /bookings/{id} доступен только участникам/ADMIN, чужой ID дает 404. PATCH /bookings/{id}: CANCELLED до начала, COMPLETED только своим MASTER или ADMIN после окончания. Обратные переходы запрещены, повтор того же перехода идемпотентен. ADMIN при отмене должен указать причину. Отмена освобождает слот.
 
 ## Отзывы, избранное, управление
+
+Расширения схемы 005: MasterRead/MasterUpdate включают `specialization` (до 160 символов) и `experience_years` (0–80); PortfolioCreate/Update/Read — `title`, `description`, nullable `category_id`; ReviewCreate/Update/Read — nullable `photo_url`. `is_demo` возвращается для профилей и отзывов, но не принимается от клиента. Фото допускают HTTP(S) либо разрешенные `/images/` пути; сервер не скачивает внешние изображения. Новая работа требует существующую активную категорию, чужая работа возвращает 404. Очистка категории/фото выполняется явным null.
 
 /favorites: GET; /favorites/{master_id}: PUT/DELETE, только CLIENT, идемпотентно. /reviews: POST после собственной COMPLETED-записи, один отзыв на запись; /reviews/{id}: PATCH своего CLIENT-отзыва, DELETE автора/ADMIN. Рейтинг вычисляется из данных, не задается в профиле вручную.
 

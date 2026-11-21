@@ -18,6 +18,7 @@ import {
   isIdentifier,
   localDate,
   money,
+  experienceLabel,
   readFilters,
   useCatalogQuery,
   useCategories,
@@ -325,6 +326,17 @@ export function MastersPage() {
                         </Link>
                       </h2>
                       <Rating master={master} />
+                      {master.specialization && (
+                        <p className="master-specialization">
+                          {master.specialization}
+                        </p>
+                      )}
+                      {master.experience_years > 0 && (
+                        <p className="master-experience">
+                          Опыт работы:{" "}
+                          {experienceLabel(master.experience_years)}
+                        </p>
+                      )}
                       <p className="master-bio-preview">
                         {master.bio || "Мастер пока не добавил описание."}
                       </p>
@@ -439,7 +451,13 @@ function resourcePage(params: URLSearchParams, key: string) {
   return /^[1-9]\d{0,5}$/.test(value) ? Number(value) : 1;
 }
 
-function PortfolioImage({ item }: { item: Portfolio }) {
+function PortfolioImage({
+  item,
+  categoryName,
+}: {
+  item: Portfolio;
+  categoryName?: string;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [failed, setFailed] = useState(false);
   return (
@@ -461,7 +479,9 @@ function PortfolioImage({ item }: { item: Portfolio }) {
         </button>
       )}
       <figcaption>
-        {item.alt_text}
+        <strong>{item.title || item.alt_text}</strong>
+        {categoryName && <span className="badge">{categoryName}</span>}
+        {item.description && <p>{item.description}</p>}
         <small>
           {item.license}
           {item.source_url && (
@@ -489,8 +509,13 @@ function PortfolioImage({ item }: { item: Portfolio }) {
         >
           <X />
         </button>
-        <img src={item.url} alt={item.alt_text} />
-        <p>{item.alt_text}</p>
+        <img
+          src={item.url}
+          alt={item.alt_text}
+          onError={() => setFailed(true)}
+        />
+        <p>{item.title || item.alt_text}</p>
+        {item.description && <p>{item.description}</p>}
       </dialog>
     </figure>
   );
@@ -582,6 +607,32 @@ function AvailabilityPanel({
   );
 }
 
+function ReviewPhoto({ url }: { url: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed)
+    return (
+      <p className="image-fallback" role="status">
+        Фотография к отзыву недоступна
+      </p>
+    );
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Открыть фотографию к отзыву"
+    >
+      <img
+        className="review-photo"
+        src={url}
+        alt="Фотография результата к отзыву"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    </a>
+  );
+}
+
 function MasterDetails({ master }: { master: Master }) {
   const [params, setParams] = useSearchParams();
   const offers = useCatalogQuery<Page<Offer>>(
@@ -596,6 +647,7 @@ function MasterDetails({ master }: { master: Master }) {
   const selected = offers.data?.items.find(
     (offer) => offer.id === params.get("offer"),
   );
+  const categories = useCategories();
   return (
     <>
       <Link className="text-link" to="/masters">
@@ -610,7 +662,22 @@ function MasterDetails({ master }: { master: Master }) {
               : "Ваш мастер / MASTERLY"}
           </p>
           <h1>{master.display_name}</h1>
+          {master.specialization && (
+            <p className="master-specialization">{master.specialization}</p>
+          )}
+          {master.experience_years > 0 && (
+            <p className="master-experience">
+              Опыт работы: {experienceLabel(master.experience_years)}
+            </p>
+          )}
           <Rating master={master} />
+          {master.is_demo && (
+            <p className="demo-notice">
+              Демонстрационный профиль. Имя, опыт, работы и примеры отзывов
+              используются для знакомства с платформой. Реальный прием не
+              проводится.
+            </p>
+          )}
           <p className="profile-bio">
             {master.bio || "Мастер пока не добавил описание."}
           </p>
@@ -686,7 +753,15 @@ function MasterDetails({ master }: { master: Master }) {
           {(data) => (
             <div className="portfolio-grid">
               {data.items.map((item) => (
-                <PortfolioImage key={item.id} item={item} />
+                <PortfolioImage
+                  key={item.id}
+                  item={item}
+                  categoryName={
+                    categories.data?.find(
+                      (category) => category.id === item.category_id,
+                    )?.name
+                  }
+                />
               ))}
             </div>
           )}
@@ -713,6 +788,17 @@ function MasterDetails({ master }: { master: Master }) {
                     <span>{review.rating} / 5</span>
                   </div>
                   <p>{review.text}</p>
+                  {review.is_demo && (
+                    <span className="badge">
+                      Пример отзыва · демонстрационные данные
+                    </span>
+                  )}
+                  {review.photo_url && (
+                    <ReviewPhoto
+                      key={review.photo_url}
+                      url={review.photo_url}
+                    />
+                  )}
                   <time dateTime={review.created_at}>
                     {new Intl.DateTimeFormat("ru-RU", {
                       dateStyle: "long",

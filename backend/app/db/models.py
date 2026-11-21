@@ -62,6 +62,8 @@ class MasterProfile(Identity, Base):
     __tablename__ = "master_profiles"
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), unique=True)
     bio: Mapped[str] = mapped_column(Text, default="")
+    specialization: Mapped[str] = mapped_column(String(160), default="", server_default="")
+    experience_years: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Qyzylorda")
     address: Mapped[str] = mapped_column(String(300), default="")
     avatar_url: Mapped[str | None] = mapped_column(String(1000))
@@ -69,6 +71,9 @@ class MasterProfile(Identity, Base):
     is_published: Mapped[bool] = mapped_column(Boolean, server_default=sqltext("false"))
     user: Mapped[User] = relationship(lazy="raise")
     offers: Mapped[list["MasterService"]] = relationship(lazy="raise", back_populates="master")
+    __table_args__ = (
+        CheckConstraint("experience_years BETWEEN 0 AND 80", name="ck_master_experience"),
+    )
 
 
 class Category(Identity, Base):
@@ -214,6 +219,8 @@ class Review(Identity, Base):
     )
     rating: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
+    photo_url: Mapped[str | None] = mapped_column(String(1000))
+    is_demo: Mapped[bool] = mapped_column(Boolean, server_default=sqltext("false"))
     is_visible: Mapped[bool] = mapped_column(Boolean, server_default=sqltext("true"))
     __table_args__ = (CheckConstraint("rating BETWEEN 1 AND 5", name="ck_reviews_rating"),)
 
@@ -232,6 +239,11 @@ class Favorite(Base):
 class PortfolioItem(Identity, Base):
     __tablename__ = "portfolio_items"
     master_id: Mapped[UUID] = mapped_column(ForeignKey("master_profiles.id", ondelete="CASCADE"))
+    category_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("categories.id", ondelete="SET NULL")
+    )
+    title: Mapped[str] = mapped_column(String(150), default="", server_default="")
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
     url: Mapped[str] = mapped_column(String(1000))
     alt_text: Mapped[str] = mapped_column(String(300))
     source_url: Mapped[str | None] = mapped_column(String(1000))

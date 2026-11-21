@@ -65,7 +65,9 @@ test("a lost booking response can be retried without duplicate creation; reload 
     headers: { Authorization: `Bearer ${session.access_token}` },
   });
   const items = (await response.json()).items.filter(
-    (item) => item.starts_at === start && item.master_id === master.id,
+    (item) =>
+      Date.parse(item.starts_at) === Date.parse(start) &&
+      item.master_id === master.id,
   );
   expect(items).toHaveLength(1);
   await page.reload();
@@ -81,7 +83,9 @@ test("a lost booking response can be retried without duplicate creation; reload 
     `${api}/masters/${master.id}/availability?master_service_id=${offer.id}&date=${start.slice(0, 10)}`,
   );
   expect(
-    (await availability.json()).slots.some((slot) => slot.starts_at === start),
+    (await availability.json()).slots.some(
+      (slot) => Date.parse(slot.starts_at) === Date.parse(start),
+    ),
   ).toBe(true);
   await page.getByRole("link", { name: "← В кабинет" }).click();
   await expect(page.locator(".booking-card")).toHaveCount(1);

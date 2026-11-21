@@ -89,7 +89,9 @@ export function ResourceForm({
             const value = String(data.get(field.name) ?? "").trim();
             if (field.type === "number" && value)
               values[field.name] = Number(value);
-            else values[field.name] = value;
+            else
+              values[field.name] =
+                field.name === "photo_url" ? value || null : value;
           }
         }
         try {

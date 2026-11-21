@@ -20,6 +20,22 @@ async function remove(item) {
   await expect(item).toHaveCount(0);
 }
 
+async function findResource(page, text) {
+  const item = page.locator(".resource-item").filter({ hasText: text });
+  for (let index = 0; index < 30; index += 1) {
+    await expect(page.getByText("Загружаем…", { exact: true })).toHaveCount(0);
+    if (await item.count()) return item;
+    const next = page.getByRole("link", { name: "Далее →", exact: true });
+    if (!(await next.count())) break;
+    const pagination = page.locator(".catalog-pagination span");
+    const previous = await pagination.textContent();
+    await next.click();
+    await expect(pagination).not.toHaveText(previous);
+  }
+  await expect(item).toBeVisible();
+  return item;
+}
+
 test("master completes a real visit; client creates, edits and deletes their review", async ({
   page,
   request,
@@ -218,9 +234,8 @@ test("administrator manages catalog, visibility, user status and reasoned cancel
     .selectOption({ label: "Тестовое направление" });
   await form.getByLabel("Название услуги").fill("Тестовая процедура");
   await form.getByRole("button", { name: "Добавить", exact: true }).click();
-  let item = page
-    .locator(".resource-item")
-    .filter({ hasText: "Тестовая процедура" });
+  await expect(form.getByRole("status")).toHaveText("Сохранено.");
+  let item = await findResource(page, "Тестовая процедура");
   await item.getByRole("button", { name: "Изменить", exact: true }).click();
   await item
     .getByLabel("Описание", { exact: true })
@@ -238,9 +253,7 @@ test("administrator manages catalog, visibility, user status and reasoned cancel
     .locator(".workspace-tabs")
     .getByRole("link", { name: "Услуги", exact: true })
     .click();
-  await remove(
-    page.locator(".resource-item").filter({ hasText: "Тестовая процедура" }),
-  );
+  await remove(await findResource(page, "Тестовая процедура"));
   await page.getByRole("link", { name: "Направления", exact: true }).click();
   await remove(
     page.locator(".resource-item").filter({ hasText: "Тестовое направление" }),
@@ -248,7 +261,7 @@ test("administrator manages catalog, visibility, user status and reasoned cancel
   const client = await registerClient(request);
   await page.goto("/admin/users");
   await expect(page).toHaveURL("/admin?tab=users");
-  item = page.locator(".resource-item").filter({ hasText: client.email });
+  item = await findResource(page, client.email);
   await item.getByRole("button", { name: "Изменить", exact: true }).click();
   await item.getByLabel("Активно", { exact: true }).uncheck();
   await item.getByRole("button", { name: "Сохранить изменения" }).click();

@@ -7,7 +7,7 @@ from app.core.errors import AppError
 from app.db.models import Base
 
 # Выпуск A читает прежние данные на обеих схемах; выпуск B требует только 005.
-SUPPORTED_REVISIONS = frozenset({"004", "005"})
+SUPPORTED_REVISIONS = frozenset({"005"})
 REVISION_005_COLUMNS = {
     "master_profiles": {"specialization", "experience_years"},
     "portfolio_items": {"title", "description", "category_id"},

@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Literal
+from typing import ClassVar, Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -22,12 +22,16 @@ class Page[T](BaseModel):
 
 
 class Patch(StrictSchema):
+    nullable_fields: ClassVar[frozenset[str]] = frozenset()
+
     @model_validator(mode="after")
     def provided_values(self):
         if not self.model_fields_set:
             raise ValueError("Укажите хотя бы одно изменение")
         if any(
-            getattr(self, name) is None for name in self.model_fields_set if name != "avatar_url"
+            getattr(self, name) is None
+            for name in self.model_fields_set
+            if name not in self.nullable_fields
         ):
             raise ValueError("Значение не может быть null")
         return self
@@ -111,7 +115,12 @@ def image_url(value):
 
 
 class MasterUpdate(Patch):
+    """Изменение собственного профиля; демомаркировка клиентом не назначается."""
+
+    nullable_fields = frozenset({"avatar_url"})
     bio: str | None = Field(default=None, max_length=3000)
+    specialization: str | None = Field(default=None, max_length=160)
+    experience_years: int | None = Field(default=None, ge=0, le=80)
     timezone: str | None = Field(default=None, max_length=64)
     address: str | None = Field(default=None, max_length=300)
     avatar_url: str | None = Field(default=None, max_length=1000)
@@ -137,6 +146,8 @@ class MasterRead(ReadModel):
     id: UUID
     display_name: str
     bio: str
+    specialization: str
+    experience_years: int
     timezone: str
     address: str
     avatar_url: str | None
@@ -286,6 +297,18 @@ class AvailabilityRead(BaseModel):
 
 
 class BookingCreate(StrictSchema):
+    """Цена и длительность берутся с сервера, клиент передает предложение и время."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "master_service_id": "00000000-0000-4000-8000-000000000001",
+                    "starts_at": "2027-01-15T10:00:00+05:00",
+                }
+            ]
+        }
+    )
     master_service_id: UUID
     starts_at: AwareDatetime
 
@@ -333,6 +356,11 @@ class BookingOverview(BaseModel):
 
 
 class PortfolioCreate(StrictSchema):
+    """Работа мастера с описанием, категорией и источником изображения."""
+
+    title: str = Field(default="", max_length=150)
+    description: str = Field(default="", max_length=1500)
+    category_id: UUID | None = None
     url: str = Field(max_length=1000)
     alt_text: str = Field(min_length=1, max_length=300)
     source_url: str | None = Field(default=None, max_length=1000)
@@ -346,12 +374,19 @@ class PortfolioCreate(StrictSchema):
 
 
 class PortfolioUpdate(Patch):
+    nullable_fields = frozenset({"category_id"})
+    title: str | None = Field(default=None, max_length=150)
+    description: str | None = Field(default=None, max_length=1500)
+    category_id: UUID | None = None
     alt_text: str | None = Field(default=None, min_length=1, max_length=300)
     position: int | None = Field(default=None, ge=0)
 
 
 class PortfolioRead(ReadModel):
     id: UUID
+    title: str
+    description: str
+    category_id: UUID | None
     url: str
     alt_text: str
     source_url: str | None
@@ -360,20 +395,47 @@ class PortfolioRead(ReadModel):
 
 
 class ReviewCreate(StrictSchema):
+    """Настоящий отзыв связан с завершенным посещением, фото по URL необязательно."""
+
     booking_id: UUID
     rating: int = Field(ge=1, le=5)
     text: str = Field(min_length=1, max_length=3000)
+    photo_url: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("photo_url")
+    @classmethod
+    def safe_photo(cls, value):
+        return image_url(value)
+
+    @field_validator("text")
+    @classmethod
+    def nonblank_text(cls, value):
+        return CategoryCreate.clean_name(value)
 
 
 class ReviewUpdate(Patch):
+    nullable_fields = frozenset({"photo_url"})
     rating: int | None = Field(default=None, ge=1, le=5)
     text: str | None = Field(default=None, min_length=1, max_length=3000)
+    photo_url: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("photo_url")
+    @classmethod
+    def safe_photo(cls, value):
+        return image_url(value)
+
+    @field_validator("text")
+    @classmethod
+    def nonblank_text(cls, value):
+        return CategoryCreate.clean_name(value) if value is not None else value
 
 
 class ReviewRead(ReadModel):
     id: UUID
     rating: int
     text: str
+    photo_url: str | None
+    is_demo: bool
     author_name: str
     created_at: datetime
 

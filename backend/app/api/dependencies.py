@@ -18,6 +18,7 @@ def current_user(
 ) -> User:
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise AppError(401, "UNAUTHENTICATED", "Войдите в аккаунт.")
+    # После проверки подписи и срока JWT повторно проверяем активность и роль в БД.
     user = db.get(User, decode_access(credentials.credentials))
     if user is None or not user.is_active:
         raise AppError(401, "UNAUTHENTICATED", "Войдите в аккаунт заново.")
