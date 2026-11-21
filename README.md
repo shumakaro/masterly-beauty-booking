@@ -6,7 +6,7 @@
 
 React/TypeScript/Vite, FastAPI и PostgreSQL, 12 таблиц и пять Alembic-миграций. Работают каталог, запись, отзывы и кабинеты CLIENT/MASTER/ADMIN. Базовая версия опубликована: https://masterly-beauty-booking.onrender.com/ . Локальные дополнения профилей, портфолио и фотографий отзывов требуют миграции 005 и отдельного согласованного деплоя; автоматически на сервер не отправляются.
 
-Пользователь подтвердил индивидуальный формат и сохранение расширенного объема: CLIENT, MASTER, ADMIN. Разрешение преподавателя на расширение относительно силлабуса пока не подтверждено. Срок: как можно раньше, календарный дедлайн не задан.
+Роли CLIENT, MASTER и ADMIN разделяют пользовательские сценарии и серверные права доступа.
 
 ## Локальный запуск (PowerShell, из корня)
 
@@ -33,7 +33,27 @@ npm run dev
 
 Frontend: http://localhost:5173. API: http://localhost:8000/api/v1/health. OpenAPI: http://localhost:8000/docs. Эти адреса только для локальной разработки; API URL задается через .env. После изменения VITE-переменных перезапустить Vite.
 
-## Проверки
+## Docker Compose
+
+На чистой машине с Docker и Python безопасное создание локальных настроек:
+
+```powershell
+python scripts/configure_compose.py
+docker compose --env-file .env.compose up --build -d --wait
+```
+
+Генератор создает три разных случайных секрета, не показывает их и отказывается
+перезаписывать существующий файл. Интерфейс: http://127.0.0.1:8080.
+
+Альтернатива через шаблон: скопировать .env.example в .env, приватно заполнить
+JWT_SECRET, POSTGRES_ADMIN_PASSWORD и POSTGRES_PASSWORD, задать
+CORS_ORIGINS=["http://127.0.0.1:8080"] и COOKIE_SECURE=false, затем выполнить
+docker compose up --build -d --wait. Пустые секреты не являются рабочими
+значениями. Для публичного HTTPS COOKIE_SECURE должен быть true.
+
+Не заменяйте секреты существующего Docker-тома при обычном обновлении.
+
+## Проверки приложения
 
 ```powershell
 cd frontend
@@ -58,13 +78,12 @@ cd backend
 - backend/app: main, api/v1, core, services, repositories.
 - backend/tests: изолированные тесты API.
 - .github/workflows/ci.yml: lint/typecheck/tests/build.
-- docs/audit: исходный аудит, сценарии и SHA256 материалов.
-- docs/report: матрица требований и непрерывный журнал.
-- Исходный TSX, syllabus, ODT и ZIP сохранены в корне как материалы, не как исполняемая часть.
+- docs/deployment/RELEASES.md: совместимость схем, резервирование и безопасный выпуск.
+- docs/security-review.md: реализованные меры защиты и ограничения.
 
-Схема БД описана в backend/DATABASE.md; ER и доказательства доступны в локальном отчете. Базовая публичная версия доступна на Render; актуальные локальные изменения не развернуты. Реальные локальные скриншоты интерфейса сохранены в локальном отчете. Не использовать вымышленные данные доступа. Health показывает только работоспособность процесса API, не готовность БД.
+Схема БД описана в backend/DATABASE.md. Базовая публичная версия доступна на Render; новый выпуск требует отдельного развертывания. Health проверяет процесс, readiness — подключение, совместимую ревизию и необходимые столбцы. Рабочих учетных данных в репозитории нет.
 
-Использование AI раскрыто в AI_USAGE.md. Полный план и критерии приемки: docs/audit/02_ROUTES_AND_ACCEPTANCE.md и docs/report/14_REQUIREMENTS_CHECKLIST.md.
+Использование AI раскрыто в AI_USAGE.md. Порядок выпуска и восстановления: docs/deployment/RELEASES.md.
 
 Официальные источники настройки: https://vite.dev/guide/ и https://fastapi.tiangolo.com/.
 
@@ -74,14 +93,14 @@ cd backend
 
 Браузерная проверка (требует установленный Microsoft Edge): запустить frontend командой npm run dev -- --host 127.0.0.1 --port 5174 --strictPort, затем из frontend выполнить node scripts/check-design.mjs. Скрипт проверяет 7 ширин, навигацию и reduced motion и сохраняет PNG/JSON в локальный docs/evidence. Он не запускается в CI без настройки Edge.
 
-Исходный прототип, силлабус, ZIP/ODT/текст ТЗ и локальный отчет не публикуются по решению пользователя. Ссылки на docs относятся к локальному комплекту проекта.
+Исходные пользовательские материалы, личные документы, дампы, секреты и локальные артефакты проверок не входят в публикуемый код.
 
 
 ## Авторизация
 
 Подробные контракты и настройки: backend/AUTH.md. Нет ключа JWT и паролей по умолчанию. Создание ADMIN — только через python -m app.cli со скрытым вводом пароля. COOKIE_SECURE=false допускается только для localhost; production требует HTTPS и Secure cookie. Access хранится в памяти, refresh — HttpOnly cookie. Logout отзывает refresh, скопированный access может действовать до 15 минут.
 
-В наборе проверок: 103 backend-теста, 19 frontend-тестов и 25 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
+В наборе проверок: 109 backend-тестов, 19 frontend-тестов и 26 основных Playwright-сценариев авторизации, каталога, записи, кабинетов, тем и доступности. Playwright запускается отдельно: из frontend npx playwright test (требуются работающие API, одноразовая тестовая БД с наполнителями scripts.seed_browser и app.db.showcase, приватный случайный BROWSER_TEST_PASSWORD и frontend на адресах из playwright.config.mjs). Подробности: frontend/BOOKING.md и frontend/ACCESSIBILITY.md.
 
 ## Бизнес-API
 

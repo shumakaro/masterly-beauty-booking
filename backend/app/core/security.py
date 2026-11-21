@@ -39,6 +39,7 @@ def token_hash(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
 
 
+# Подписанный JWT имеет короткий срок; фактические права дополнительно проверяются по БД.
 def access_token(user_id: UUID, role: str) -> str:
     now = datetime.now(UTC)
     return jwt.encode(

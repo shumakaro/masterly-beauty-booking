@@ -1,4 +1,4 @@
-"""PostgreSQL models. Schema changes are applied exclusively through Alembic."""
+"""Доменные модели PostgreSQL. Изменение схемы выполняется только через Alembic."""
 
 from datetime import date, datetime, time
 from decimal import Decimal

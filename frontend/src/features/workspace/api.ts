@@ -24,6 +24,7 @@ export function pageNumber(params: URLSearchParams) {
   const page = params.get("page") ?? "1";
   return /^[1-9]\d{0,5}$/.test(page) ? Number(page) : 1;
 }
+// Приватный кеш разделен по user.id: смена пользователя не открывает прежние данные.
 export function usePrivateQuery<T>(path: string, enabled = true) {
   const { user } = useAuth();
   return useQuery({

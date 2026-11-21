@@ -34,7 +34,9 @@ export class ApiError extends Error {
 }
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+// Access живет только в памяти; refresh-cookie недоступна JavaScript.
 let token: string | null = null;
+// Параллельные запросы разделяют одно обновление, чтобы не повторять ротацию refresh.
 let refreshPromise: Promise<SessionResponse> | null = null;
 const listeners = new Set<(user: User | null) => void>();
 

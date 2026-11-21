@@ -122,8 +122,19 @@ export function ResourceForm({
         .filter((field) => method === "POST" || !field.createOnly)
         .map((field) => {
           const value = initial?.[field.name] ?? field.default ?? "";
+          const fieldError =
+            write.error instanceof ApiError
+              ? write.error.fields.find(
+                  (error) =>
+                    error.path === field.name ||
+                    error.path.endsWith(`.${field.name}`),
+                )
+              : undefined;
+          // Ошибка описывает поле, но не меняет его доступное имя для поиска и фокуса.
+          const fieldErrorId = `${errorId}-${field.name}`;
           const common = {
             name: field.name,
+            "aria-label": field.label,
             required: field.required,
             maxLength: field.maxLength,
             disabled: write.isPending,
@@ -135,7 +146,11 @@ export function ResourceForm({
                     error.path.endsWith(`.${field.name}`),
                 )) ||
               undefined,
-            "aria-describedby": write.error ? errorId : undefined,
+            "aria-describedby": fieldError
+              ? fieldErrorId
+              : write.error
+                ? errorId
+                : undefined,
           };
           return (
             <label
@@ -181,6 +196,11 @@ export function ResourceForm({
                         : undefined)
                   }
                 />
+              )}
+              {fieldError && (
+                <span className="field-error" id={fieldErrorId}>
+                  {fieldError.message}
+                </span>
               )}
             </label>
           );

@@ -13,7 +13,8 @@ def main():
         if target.exists()
         else (root / ".env.example").read_text(encoding="utf-8-sig")
     )
-    match = re.search(r"^\s*JWT_SECRET\s*=\s*(.*)$", content, flags=re.MULTILINE)
+    # Только горизонтальные пробелы: пустое значение не должно поглощать следующую строку.
+    match = re.search(r"^[ \t]*JWT_SECRET[ \t]*=[ \t]*([^\r\n]*)$", content, flags=re.MULTILINE)
     if match and match.group(1).strip().strip("\"'"):
         print("Existing JWT_SECRET preserved. No secret was printed.")
         return
