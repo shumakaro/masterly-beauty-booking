@@ -10,6 +10,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError, requestJson } from "../shared/api/client";
 import { MasterPage, MastersPage } from "./CatalogPages";
+import { AuthContext } from "../features/auth/authState";
 
 vi.mock("../shared/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../shared/api/client")>()),
@@ -39,13 +40,23 @@ function show(path: string) {
   clients.push(client);
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/masters" element={<MastersPage />} />
-          <Route path="/masters/:id" element={<MasterPage />} />
-        </Routes>
-        <Location />
-      </MemoryRouter>
+      <AuthContext
+        value={{
+          user: null,
+          status: "guest",
+          login: vi.fn(),
+          logout: vi.fn(),
+          retry: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route path="/masters" element={<MastersPage />} />
+            <Route path="/masters/:id" element={<MasterPage />} />
+          </Routes>
+          <Location />
+        </MemoryRouter>
+      </AuthContext>
     </QueryClientProvider>,
   );
 }
@@ -176,4 +187,70 @@ it("provides a catalog recovery link for a missing profile", async () => {
   expect(
     screen.getByRole("link", { name: "Вернуться в каталог" }),
   ).toHaveAttribute("href", "/masters");
+});
+
+it("shows specialization, experience and transparent demo content with review photos", async () => {
+  vi.mocked(requestJson).mockImplementation(
+    async <T,>(path: string): Promise<T> => {
+      if (path === `masters/${id}`)
+        return {
+          ...master,
+          specialization: "Макияж",
+          experience_years: 7,
+        } as T;
+      if (path.startsWith("categories"))
+        return { items: [{ id, name: "Макияж" }], total: 1 } as T;
+      if (path.includes("/reviews?"))
+        return {
+          items: [
+            {
+              id,
+              rating: 5,
+              text: "Пример впечатления",
+              author_name: "Мария",
+              created_at: "2026-11-01T10:00:00Z",
+              is_demo: true,
+              photo_url: "/images/review.webp",
+            },
+          ],
+          total: 1,
+          page: 1,
+          page_size: 6,
+        } as T;
+      if (path.includes("/portfolio?"))
+        return {
+          items: [
+            {
+              id,
+              title: "Вечерний образ",
+              description: "Мягкая растушевка",
+              category_id: id,
+              url: "/images/work.webp",
+              alt_text: "Пример макияжа",
+              license: "Демонстрационный материал",
+              source_url: null,
+            },
+          ],
+          total: 1,
+          page: 1,
+          page_size: 12,
+        } as T;
+      return { items: [], total: 0, page: 1, page_size: 12 } as T;
+    },
+  );
+  show(`/masters/${id}`);
+  expect(await screen.findByText("Опыт работы: 7 лет")).toBeInTheDocument();
+  expect(screen.getByText(/Демонстрационный профиль. Имя/)).toBeInTheDocument();
+  expect(
+    await screen.findByText("Вечерний образ", { selector: "strong" }),
+  ).toBeInTheDocument();
+  expect(screen.getAllByText("Мягкая растушевка").length).toBeGreaterThan(0);
+  expect(await screen.findByText(/Пример отзыва/)).toBeInTheDocument();
+  const photo = screen.getByRole("img", {
+    name: "Фотография результата к отзыву",
+  });
+  fireEvent.error(photo);
+  expect(
+    screen.getByText("Фотография к отзыву недоступна"),
+  ).toBeInTheDocument();
 });

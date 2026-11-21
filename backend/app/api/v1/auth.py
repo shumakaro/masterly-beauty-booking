@@ -61,6 +61,10 @@ def clear_refresh(response: Response) -> None:
     summary="Register a client or master; ADMIN is never self-assigned",
 )
 def register(data: Registration, db: Db):
+    """
+    Создать CLIENT или MASTER. ADMIN через регистрацию недоступен. Пароль хешируется bcrypt,
+    ошибки валидации не возвращают исходные секреты.
+    """
     return AuthService(db).register(data)
 
 
@@ -72,6 +76,10 @@ def register(data: Registration, db: Db):
     summary="Authenticate with JSON credentials and issue a refresh cookie",
 )
 def login(data: Login, response: Response, db: Db):
+    """
+    Вход по email и паролю. Access JWT возвращается в ответе, refresh сохраняется в HttpOnly
+    cookie. Применяются Origin/CSRF и ограничение частоты.
+    """
     result, raw, seconds = AuthService(db).login(data)
     set_refresh(response, raw, seconds)
     return result
@@ -85,6 +93,10 @@ def login(data: Login, response: Response, db: Db):
     summary="Rotate the refresh cookie; replays revoke its entire family",
 )
 def refresh(request: Request, response: Response, db: Db):
+    """
+    Обновить access JWT с ротацией HttpOnly refresh cookie. Повторное использование
+    отозванного refresh отзывает семейство сессии.
+    """
     raw = request.cookies.get(COOKIE_NAME)
     if not raw or len(raw) > 256:
         raise AppError(401, "INVALID_SESSION", "Войдите в аккаунт заново.")
@@ -101,6 +113,10 @@ def refresh(request: Request, response: Response, db: Db):
     summary="Revoke refresh session",
 )
 def logout(request: Request, db: Db):
+    """
+    Отозвать refresh-сессию и очистить cookie. Ранее выданный access JWT может действовать до
+    истечения его короткого срока.
+    """
     AuthService(db).logout(request.cookies.get(COOKIE_NAME))
     response = Response(status_code=204)
     clear_refresh(response)
@@ -115,6 +131,7 @@ def logout(request: Request, db: Db):
     summary="Current private profile",
 )
 def me(user: CurrentUser):
+    """Текущий активный пользователь по JWT; пароль и внутренние данные сессии не возвращаются."""
     return user
 
 
@@ -126,6 +143,10 @@ def me(user: CurrentUser):
     summary="Update own display name",
 )
 def update_me(data: UserUpdate, user: CurrentUser, db: Db):
+    """
+    Изменить собственное отображаемое имя. Изменение роли или чужого пользователя через этот
+    путь недоступно.
+    """
     return AuthService(db).update_user(user, data.display_name)
 
 
@@ -137,6 +158,7 @@ def update_me(data: UserUpdate, user: CurrentUser, db: Db):
     summary="Read only the authenticated master's profile",
 )
 def master_profile(user: MasterUser, db: Db):
+    """MASTER получает собственный профиль, включая неопубликованный."""
     return AuthService(db).master_profile(user.id)
 
 
@@ -154,4 +176,5 @@ class AdminOverview(BaseModel):
     summary="Real system totals, restricted to ADMIN",
 )
 def admin_overview(user: AdminUser, db: Db):
+    """ADMIN получает агрегированную сводку платформы."""
     return AdminOverview(**AuthService(db).overview())

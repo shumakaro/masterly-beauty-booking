@@ -79,6 +79,8 @@ class MasterProfileRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     bio: str
+    specialization: str
+    experience_years: int
     timezone: str
     address: str
     avatar_url: str | None

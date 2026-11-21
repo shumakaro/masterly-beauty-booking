@@ -340,7 +340,7 @@
 }
 .portfolio-grid figcaption small {
   display: block;
-  color: var(--muted);
+  color: var(--ink);
 }
 .portfolio-grid figcaption a {
   text-decoration: underline;
@@ -466,4 +466,35 @@
   .service-card {
     padding: 25px;
   }
+}
+.master-specialization {
+  font-weight: 600;
+  margin-block: 12px 6px;
+  color: var(--ink);
+}
+.master-experience {
+  font-size: 0.9rem;
+  margin-block: 6px 14px;
+}
+.demo-notice {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  padding: 14px 18px;
+  border-inline-start: 2px solid var(--mocha);
+  background: var(--surface);
+  max-width: 60ch;
+}
+.portfolio-grid figcaption strong {
+  display: block;
+  margin-block: 12px 6px;
+}
+.portfolio-grid figcaption p {
+  margin-block: 6px 10px;
+}
+.review-photo {
+  display: block;
+  width: min(100%, 240px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin-block: 16px;
 }

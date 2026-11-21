@@ -47,6 +47,12 @@ const reviewFields: Field[] = [
     maxLength: 3000,
     required: true,
   },
+  {
+    name: "photo_url",
+    label: "Фотография результата по ссылке (необязательно)",
+    type: "url",
+    maxLength: 1000,
+  },
 ];
 
 export function BookingCard({

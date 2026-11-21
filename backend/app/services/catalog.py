@@ -123,6 +123,8 @@ class CatalogService:
 
     def create_portfolio(self, actor, data):
         master = self.own_master(actor)
+        if data.category_id is not None:
+            self.category(data.category_id)
         item = PortfolioItem(master_id=master.id, **data.model_dump())
         with change(self.db):
             self.db.add(item)
@@ -137,6 +139,8 @@ class CatalogService:
 
     def update_portfolio(self, actor, identifier, data):
         item = self.owned_portfolio(actor, identifier)
+        if data.category_id is not None:
+            self.category(data.category_id)
         with change(self.db):
             apply_patch(item, data.model_dump(exclude_unset=True))
         return item

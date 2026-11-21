@@ -22,6 +22,8 @@ export interface Master {
   id: string;
   display_name: string;
   bio: string;
+  specialization: string;
+  experience_years: number;
   timezone: string;
   address: string;
   avatar_url: string | null;
@@ -38,6 +40,9 @@ export interface Offer extends Service {
 }
 export interface Portfolio {
   id: string;
+  title: string;
+  description: string;
+  category_id: string | null;
   url: string;
   alt_text: string;
   source_url: string | null;
@@ -47,6 +52,8 @@ export interface Review {
   id: string;
   rating: number;
   text: string;
+  photo_url: string | null;
+  is_demo: boolean;
   author_name: string;
   created_at: string;
 }
@@ -167,6 +174,11 @@ export function money(value: string) {
     currency: "KZT",
     maximumFractionDigits: 2,
   }).format(Number(value));
+}
+
+export function experienceLabel(years: number) {
+  const unit = new Intl.PluralRules("ru").select(years);
+  return `${years} ${unit === "one" ? "год" : unit === "few" ? "года" : "лет"}`;
 }
 export function localDate(timezone: string, value = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {

@@ -199,6 +199,7 @@ class AppointmentService:
         return self.repo.booking_read(identifier), created
 
     def owned_booking(self, actor, identifier):
+        # Чужую запись скрываем тем же 404, что и отсутствующую, не раскрывая владельца.
         item = found(self.repo.booking(identifier))
         master = found(self.repo.master(item.master_id))
         if actor.role != "ADMIN" and item.client_id != actor.id and master.user_id != actor.id:

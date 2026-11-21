@@ -122,8 +122,8 @@ test("profile shows real services, availability timezone and accessible portfoli
 test("services lead to their category and a missing profile offers recovery", async ({
   page,
 }) => {
-  await page.goto("/services");
-  await expect(page.locator(".service-card")).toHaveCount(2);
+  await page.goto("/services?search=" + encodeURIComponent("Демо-маникюр"));
+  await expect(page.locator(".service-card")).toHaveCount(1);
   const service = page.locator(".service-card").filter({
     has: page.getByRole("heading", { name: "Демо-маникюр", exact: true }),
   });
