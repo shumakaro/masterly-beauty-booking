@@ -35,6 +35,28 @@ Frontend: http://localhost:5173. API: http://localhost:8000/api/v1/health. OpenA
 
 ## Проверки
 
+## Docker Compose
+
+На чистой машине с Docker и Python безопасное создание локальных настроек:
+
+```powershell
+python scripts/configure_compose.py
+docker compose --env-file .env.compose up --build -d --wait
+```
+
+Генератор создает три разных случайных секрета, не показывает их и отказывается
+перезаписывать существующий файл. Интерфейс: http://127.0.0.1:8080.
+
+Альтернатива через шаблон: скопировать .env.example в .env, приватно заполнить
+JWT_SECRET, POSTGRES_ADMIN_PASSWORD и POSTGRES_PASSWORD, задать
+CORS_ORIGINS=["http://127.0.0.1:8080"] и COOKIE_SECURE=false, затем выполнить
+docker compose up --build -d --wait. Пустые секреты не являются рабочими
+значениями. Для публичного HTTPS COOKIE_SECURE должен быть true.
+
+Не заменяйте секреты существующего Docker-тома при обычном обновлении.
+
+## Проверки приложения
+
 ```powershell
 cd frontend
 npm run lint
