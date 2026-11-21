@@ -24,9 +24,7 @@ export function Feedback({
       {error instanceof ApiError && error.fields.length > 0 && (
         <ul>
           {error.fields.map((field, index) => (
-            <li key={index}>
-              {field.path}: {field.message}
-            </li>
+            <li key={index}>{field.message}</li>
           ))}
         </ul>
       )}

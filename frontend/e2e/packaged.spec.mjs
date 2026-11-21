@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 
-test("packaged React app authenticates through Nginx with CSP and restores the secure session", async ({
+test("packaged React app authenticates on the same origin with CSP and restores the session", async ({
   page,
 }, testInfo) => {
   const errors = [];

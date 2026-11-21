@@ -15,8 +15,8 @@ export function ViewportEffects() {
             // Content remains visible before intersection and without JavaScript.
             const animation = entry.target.animate(
               [
-                { opacity: 0.65, transform: "translateY(12px)" },
-                { opacity: 1, transform: "translateY(0)" },
+                { transform: "translateY(12px)" },
+                { transform: "translateY(0)" },
               ],
               { duration: 420, easing: "ease-out" },
             );

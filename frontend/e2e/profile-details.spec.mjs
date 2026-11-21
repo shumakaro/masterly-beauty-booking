@@ -6,7 +6,6 @@ for (const width of [375, 768, 1440]) {
   test(`rich profile and demo reviews remain usable at ${width}px`, async ({
     page,
   }, testInfo) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 950 });
     await page.goto("/masters?search=Амина%20Садыкова");
     await expect(page.locator(".master-card")).toHaveCount(1);

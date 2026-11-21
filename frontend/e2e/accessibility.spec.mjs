@@ -295,7 +295,7 @@ for (const [role, email, path, tabs] of [
       ).toHaveAttribute("aria-invalid", "true");
       await expect(
         item.getByRole("spinbutton", { name: "Стоимость, ₸", exact: true }),
-      ).toHaveAttribute("aria-describedby", await error.getAttribute("id"));
+      ).toHaveAccessibleDescription("Некорректная стоимость.");
       await audit(page, testInfo, "server-field-error");
       await page.unroute("**/api/v1/master/services/*");
       await item
